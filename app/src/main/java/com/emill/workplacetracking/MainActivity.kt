@@ -3,6 +3,7 @@ package com.emill.workplacetracking
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -107,19 +108,23 @@ fun TimerScreen(timerViewModel: TimerViewModel = viewModel()) {
                 .align(Alignment.Center)
                 .offset(y = (-50).dp)
         ) {
-            Text(text = time, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(16.dp))
-            Row {
-                Button(onClick = { timerViewModel.startTimer() }) {
-                    Text("Start")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { timerViewModel.stopTimer() }) {
-                    Text("Stop")
-                }
+            Text(
+                text = time,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .clickable { timerViewModel.toggleTimer() }
+            )
+            Button(
+                onClick = { timerViewModel.resetTimer() },
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
+                Text("Reset")
             }
         }
     }
 }
+
 @Composable
 fun SettingsDialog(showDialog: MutableState<Boolean>, onDismiss: () -> Unit) {
     // Assuming you store these settings in a ViewModel or similar

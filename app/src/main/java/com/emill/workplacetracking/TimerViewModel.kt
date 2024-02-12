@@ -11,18 +11,27 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class TimerViewModel : ViewModel() {
-    private val _time = MutableStateFlow("00:00:00")
+    private val _time = MutableStateFlow("00:00:00.000")
     val time: StateFlow<String> = _time
 
     private var job: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main)
+    private var seconds = 0
+    private var isRunning = false
 
-    fun startTimer() {
+    fun toggleTimer() {
+        if (isRunning) {
+            stopTimer()
+        } else {
+            startTimer()
+        }
+    }
+
+    private fun startTimer() {
+        isRunning = true
         job = scope.launch {
-            var seconds = 0
-
             while (isActive) {
-                _time.value = formatTime(seconds) // Update the MutableStateFlow
+                _time.value = formatTime(seconds)
                 delay(1000)
                 seconds++
             }
@@ -30,7 +39,14 @@ class TimerViewModel : ViewModel() {
     }
 
     fun stopTimer() {
+        isRunning = false
         job?.cancel()
+    }
+
+    fun resetTimer() {
+        stopTimer()
+        seconds = 0
+        _time.value = formatTime(seconds) // Reset the displayed time immediately
     }
 
     private fun formatTime(seconds: Int): String {
@@ -38,10 +54,5 @@ class TimerViewModel : ViewModel() {
         val minutes = (seconds % 3600) / 60
         val secs = seconds % 60
         return String.format("%02d:%02d:%02d", hours, minutes, secs)
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        job?.cancel()
     }
 }
