@@ -40,7 +40,6 @@ class MainActivity : ComponentActivity() {
 }
 
 
-
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
@@ -83,8 +82,6 @@ fun MyApp() {
         }
     }
 }
-
-
 
 @Composable
 fun SettingsDialog(showDialog: MutableState<Boolean>, onDismiss: () -> Unit) {
