@@ -1,6 +1,11 @@
+import com.google.devtools.ksp.gradle.model.Ksp
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
+    //kotlin("kapt") // Apply kapt for Kotlin annotation processing
+
 }
 
 android {
@@ -17,6 +22,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+
+
         }
     }
 
@@ -70,4 +77,25 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // ViewModel
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0") // Check for the latest version
+    // Compose ViewModel
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0") // For viewModel() in Compose
+
+    //val roomVersion = "2.4.3" // Use the latest version of Room that's compatible with your setup
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
+    //kapt("androidx.room:room-compiler:$roomVersion")
+// For Kotlin, use kapt for annotation processing
+
+// optional - Kotlin Extensions and Coroutines support for Room
+    implementation("androidx.room:room-ktx:$roomVersion")
+
+// optional - Test helpers
+    testImplementation("androidx.room:room-testing:$roomVersion")
+
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation ("androidx.compose.runtime:runtime-livedata:1.6.2")
 }
