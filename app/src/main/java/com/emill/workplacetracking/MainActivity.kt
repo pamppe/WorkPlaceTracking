@@ -22,11 +22,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -55,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.emill.workplacetracking.db.AppDatabase
@@ -62,6 +66,7 @@ import com.emill.workplacetracking.db.MainViewModelFactory
 import com.emill.workplacetracking.db.UserInfo
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -79,7 +84,10 @@ class MainActivity : ComponentActivity() {
         ).fallbackToDestructiveMigration().build()
 
         val userInfoDao = appDatabase.userInfoDao()
-        val factory = MainViewModelFactory(userInfoDao)
+        val workEntryDao = appDatabase.workEntryDao()
+        // Initialize your ViewModel factories
+        val mainViewModelFactory = MainViewModelFactory(userInfoDao, workEntryDao)
+        val timerViewModelFactory = TimerViewModelFactory(workEntryDao)
 
         // Create the notification channel
         createNotificationChannel()
@@ -99,8 +107,19 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val mainViewModel: MainViewModel = viewModel(factory = factory)
-            val timerViewModel: TimerViewModel = viewModel() // Adjust based on your ViewModel setup
+            val mainViewModel: MainViewModel = viewModel(factory = mainViewModelFactory)
+
+            // Provide the custom factory when retrieving the TimerViewModel
+            val timerViewModel: TimerViewModel = viewModel(factory = timerViewModelFactory)
+
+            //---- Add test data to the database ---//
+                    /*
+                    val testUserId = 1
+
+                // lifecycleScope.launch {
+                  //       TestDataGenerator.addTestData(this,workEntryDao, testUserId)
+                    }
+                    */
 
             WorkPlaceTrackingTheme {
                 // Here we pass the method as a lambda function
@@ -108,7 +127,7 @@ class MainActivity : ComponentActivity() {
                     timerViewModel = timerViewModel,
                     showNotification = { message -> showNotification(message) }
                 )
-                MyApp(mainViewModel = mainViewModel)
+                MyApp(mainViewModel,timerViewModel)
             }
         }
     }
@@ -188,8 +207,9 @@ val LightBlue = Color(0xFF5263b7)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyApp(mainViewModel: MainViewModel) {
+fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
     val userInfo by mainViewModel.userInfo.observeAsState()
+    val userId = userInfo?.id
     val showDialog = remember { mutableStateOf(false) }// Show dialog if userInfo is null
     val showSettingsDialog =
         remember { mutableStateOf(false) } // Separate state for settings dialog
@@ -227,51 +247,31 @@ fun MyApp(mainViewModel: MainViewModel) {
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(), // Fill the parent
-                contentAlignment = Alignment.BottomCenter // Align contents to the bottom center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.align(Alignment.BottomCenter)
+            userId?.let { id ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize() // Fill the parent
+                        .padding(bottom = innerPadding.calculateBottomPadding()),
+                    contentAlignment = Alignment.BottomCenter // Align contents to the bottom center
                 ) {
-                    Text(
-                        text = "Tehdyt tunnit",
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(bottom = 2.dp) // Add padding to space out from the grey box
-                    )
-                    // Grey box, taking up the lower half of the screen
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(0.5f)
-                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                            .background(color = LightBlue)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.align(Alignment.BottomCenter)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth() // Expand the column horizontally
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp), // Space out the children vertically
-                            horizontalAlignment = Alignment.CenterHorizontally // Center contents horizontally
-                        ) {
-                            Spacer(modifier = Modifier.weight(1f)) // Push the column to the bottom
-                            Text(text = "MA 19.2 - 8h", fontSize = 23.sp)
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(text = "TI 20.2 - 9h", fontSize = 23.sp)
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(text = "KE 21.2 - 8h", fontSize = 23.sp)
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(text = "TO 22.2 - 8h", fontSize = 23.sp)
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(text = "PE 23.2 - 8h", fontSize = 23.sp)
-                            Spacer(modifier = Modifier.height(10.dp))
-                        }
+                        Text(
+                            text = "Tehdyt tunnit",
+                            fontSize = 20.sp,
+                            modifier = Modifier.padding(bottom = 2.dp) // Space out from the grey box
+                        )
+                        // Grey box for displaying work entries
+                        WorkEntriesDisplay(mainViewModel = mainViewModel, userId = id)
                     }
                 }
-            }
+            } ?: CircularProgressIndicator()
+
+
+
         }
     }
 }
@@ -411,7 +411,46 @@ fun TimerNotificationObserver(
         }
     }
 }
+@Composable
+fun TimerAndWorkEntriesScreen(timerViewModel: TimerViewModel, mainViewModel: MainViewModel, userId: Int) {
+    // Your existing TimerScreen composable content
+    Column {
+        Button(onClick = { timerViewModel.stopTimerAndSaveEntry(userId) }) {
+            Text("Stop Timer & Save")
+        }
 
+        WorkEntriesDisplay(mainViewModel, userId)
+    }
+}
 
+@Composable
+fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
+    // Assuming getWorkEntriesForCurrentWeek returns LiveData or State<List<WorkEntry>>
+    val workEntries by mainViewModel.getWorkEntriesForCurrentWeek(userId).observeAsState(initial = emptyList())
 
-
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.5f)
+            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .background(color = LightBlue),
+        contentAlignment = Alignment.Center // Center the content vertically
+    ) {
+        if (workEntries.isEmpty()) {
+            // If no work entries available, display a message
+            Text(
+                text = "No work entries available for this week yet.",
+                fontSize = 20.sp,
+                modifier = Modifier.padding(16.dp)
+            )
+        } else {
+            // If work entries available, display the list of entries
+            LazyColumn(modifier = Modifier.padding(16.dp)) {
+                items(workEntries) { entry ->
+                    Text(text = "${entry.date} - ${entry.hoursWorked}h", fontSize = 20.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+            }
+        }
+    }
+}
