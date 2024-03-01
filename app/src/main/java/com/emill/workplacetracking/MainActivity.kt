@@ -1,5 +1,11 @@
 package com.emill.workplacetracking
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -46,6 +52,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.emill.workplacetracking.db.AppDatabase
@@ -56,6 +65,10 @@ import com.emill.workplacetracking.viewmodel.MainViewModel
 
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -68,11 +81,90 @@ class MainActivity : ComponentActivity() {
         val userInfoDao = appDatabase.userInfoDao()
         val factory = MainViewModelFactory(userInfoDao)
 
+        // Create the notification channel
+        createNotificationChannel()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION
+                )
+            }
+        }
+
         setContent {
             val mainViewModel: MainViewModel = viewModel(factory = factory)
+            val timerViewModel: TimerViewModel = viewModel() // Adjust based on your ViewModel setup
+
             WorkPlaceTrackingTheme {
+                // Here we pass the method as a lambda function
+                TimerNotificationObserver(
+                    timerViewModel = timerViewModel,
+                    showNotification = { message -> showNotification(message) }
+                )
                 MyApp(mainViewModel = mainViewModel)
             }
+        }
+    }
+
+        // Override onRequestPermissionsResult to handle permission request responses
+        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+            if (requestCode == REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION) {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permission was granted
+                    // You can now proceed with showing notifications or any other logic that requires this permission
+                } else {
+                    // Permission was denied
+                    // Handle the denial accordingly, possibly by informing the user of the functionality they're missing out on
+                }
+            }
+        }
+
+
+    private fun createNotificationChannel() {
+
+        val name = getString(R.string.channel_name) // Define this in your strings.xml
+        val descriptionText = getString(R.string.channel_description) // And this
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel("TIMER_CHANNEL_ID", name, importance).apply {
+            description = descriptionText
+        }
+        // Register the channel with the system
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
+    private fun showNotification(contentText: String) {
+        val builder = NotificationCompat.Builder(this, "TIMER_CHANNEL_ID")
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // Use an appropriate icon for your app
+            .setContentTitle("Timer Notification")
+            .setContentText(contentText)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+        with(NotificationManagerCompat.from(this)) {
+            // Consider using a more specific ID than 0, to allow for updating or cancelling
+            if (ActivityCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return
+            }
+            notify(System.currentTimeMillis().toInt(), builder.build())
         }
     }
 }
@@ -306,5 +398,20 @@ fun UserInfoDialog(showDialog: MutableState<Boolean>, viewModel: MainViewModel) 
         )
     }
 }
+@Composable
+fun TimerNotificationObserver(
+    timerViewModel: TimerViewModel,
+    showNotification: (String) -> Unit // Add this parameter
+) {
+    val notificationText by timerViewModel.timerNotifications.collectAsState()
+    LaunchedEffect(notificationText) {
+        notificationText?.let {
+            showNotification(it) // Use the passed function
+            timerViewModel.clearTimerNotification()
+        }
+    }
+}
+
+
 
 
