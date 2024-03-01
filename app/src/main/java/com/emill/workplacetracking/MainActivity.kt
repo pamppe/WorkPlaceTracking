@@ -98,8 +98,7 @@ val LightBlue = Color(0xFF5263b7)
 @Composable
 fun MyApp(mainViewModel: MainViewModel) {
     val userInfo by mainViewModel.userInfo.observeAsState()
-    val showDialog =
-        remember { mutableStateOf(userInfo == null) } // Show dialog if userInfo is null
+    val showDialog = remember { mutableStateOf(false) }// Show dialog if userInfo is null
     val showSettingsDialog =
         remember { mutableStateOf(false) } // Separate state for settings dialog
 
@@ -115,26 +114,13 @@ fun MyApp(mainViewModel: MainViewModel) {
             FloatingActionButton(onClick = { showSettingsDialog.value = true }) {
                 Icon(Icons.Filled.Settings, contentDescription = "Settings")
             }
-            // User info button (optional, if you want a separate button to trigger user info dialog)
-            // You might want to show this only if userInfo is not null
-            // FloatingActionButton(onClick = { showDialog.value = true }) {
-            //     Icon(Icons.Filled.AccountCircle, contentDescription = "User Info")
-            // }
+
         }
     ) { innerPadding ->
         Surface(modifier = Modifier.padding(innerPadding)) {
             Column(modifier = Modifier.padding(16.dp)) {
 
                 TimerScreen(timerViewModel = viewModel())
-
-                if (userInfo != null) {
-                    Text(
-                        text = "Hello, ${userInfo!!.firstName}!",
-                        modifier = Modifier.padding(16.dp)
-                    )
-                } else {
-                    Text("Please enter your information", modifier = Modifier.padding(16.dp))
-                }
 
                 // User Info Dialog
                 if (showDialog.value) {
@@ -147,16 +133,8 @@ fun MyApp(mainViewModel: MainViewModel) {
                         // Actions to perform when the settings dialog is dismissed, if any
                     }
                 }
-
-                Text(text = "Hello, Workplace Tracker!", modifier = Modifier.padding(16.dp))
             }
 
-            if (showDialog.value) {
-                SettingsDialog(showDialog = showDialog) {
-                    // Actions to perform when the dialog is dismissed, if any
-
-                }
-            }
             Box(
                 modifier = Modifier
                     .fillMaxSize(), // Fill the parent
