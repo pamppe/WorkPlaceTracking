@@ -11,7 +11,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class TimerViewModel : ViewModel() {
-    private val _time = MutableStateFlow("00:00:00.000")
+    private val _time = MutableStateFlow("00:00:00")
     val time: StateFlow<String> = _time
 
     private var job: Job? = null

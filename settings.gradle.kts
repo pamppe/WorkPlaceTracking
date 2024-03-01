@@ -4,7 +4,16 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    resolutionStrategy {
+        eachPlugin {
+            when (requested.id.id) {
+                "com.google.devtools.ksp" -> useVersion("1.9.22-1.0.17")
+            }
+        }
+    }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -15,4 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "WorkPlaceTracking"
 include(":app")
- 
