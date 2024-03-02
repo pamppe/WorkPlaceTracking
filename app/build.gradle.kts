@@ -56,6 +56,8 @@ android {
 
 dependencies {
 
+    implementation ("com.google.android.gms:play-services-location:21.1.0")
+
     implementation ("androidx.compose.material3:material3:1.2.0")
 
     implementation("androidx.core:core-ktx:1.12.0")
