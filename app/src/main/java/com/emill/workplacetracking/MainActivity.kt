@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -58,7 +59,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.lifecycleScope
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.emill.workplacetracking.db.AppDatabase
@@ -66,7 +67,8 @@ import com.emill.workplacetracking.db.MainViewModelFactory
 import com.emill.workplacetracking.db.UserInfo
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
-import kotlinx.coroutines.launch
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 
 
 class MainActivity : ComponentActivity() {
@@ -74,8 +76,42 @@ class MainActivity : ComponentActivity() {
         private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
     }
 
+    private lateinit var gpsManager: GPSManager
+    private val locationPermissionRequestCode = 1000
+
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationResult.lastLocation?.let { location ->
+                // Use your location here
+                // Example: Check if within workplace
+                val workplaceLocation = Location("").apply {
+                    latitude = 60.158243 // Workplace latitude change to your workplace latitude
+                        longitude = 24.879649 // Workplace longitude change to your workplace longitude
+                }
+                val isWithinWorkplace = gpsManager.isWithinWorkplace(location, workplaceLocation, 100f) // Radius in meters
+
+                if (isWithinWorkplace) {
+                    showNotification("Welcome to Work. Don't forget to clock in!")
+                    // log event for applications database for record keeping or future reference?
+                    // updateWorkStatusUI(true) UI changes when in work?
+                    // Handle user being within workplace
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        gpsManager = GPSManager(this)
+        // Don't forget to request permissions before starting location updates
+        // Check for location permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted, request it
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionRequestCode)
+        } else {
+            // Permission is granted, you can start location updates
+            startLocationTracking()
+        }
 
         // Initialize your database and DAO here
         val appDatabase: AppDatabase = Room.databaseBuilder(
@@ -132,6 +168,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
+    private fun startLocationTracking() {
+        // Implement your logic to start location updates using GPSManager
+        gpsManager.startLocationUpdates(locationCallback)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        gpsManager.startLocationUpdates(locationCallback)
+    }
+    override fun onStop() {
+        super.onStop()
+        // Stop location updates when the activity is no longer visible
+        gpsManager.stopLocationUpdates(locationCallback)
+    }
+
+
         // Override onRequestPermissionsResult to handle permission request responses
         override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -145,7 +198,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
 
     private fun createNotificationChannel() {
 
