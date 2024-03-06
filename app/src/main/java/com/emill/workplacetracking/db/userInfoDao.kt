@@ -1,5 +1,6 @@
 package com.emill.workplacetracking.db
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -13,4 +14,8 @@ interface UserInfoDao {
 
     @Query("SELECT * FROM UserInfo LIMIT 1")
     suspend fun getUserInfo(): UserInfo? // Directly returns UserInfo or null
+
+    @Query("SELECT * FROM UserInfo LIMIT 1")
+    fun getUserInfo1(): LiveData<UserInfo> // Directly returns UserInfo or null
+
 }
