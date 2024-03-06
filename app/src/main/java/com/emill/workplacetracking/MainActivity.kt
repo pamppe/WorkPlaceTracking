@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -27,6 +28,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -35,6 +38,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -53,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,6 +66,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.emill.workplacetracking.db.AppDatabase
@@ -69,6 +76,7 @@ import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -149,11 +157,11 @@ class MainActivity : ComponentActivity() {
             val timerViewModel: TimerViewModel = viewModel(factory = timerViewModelFactory)
 
             //---- Add test data to the database ---//
-                    /*
-                    val testUserId = 1
 
-                // lifecycleScope.launch {
-                  //       TestDataGenerator.addTestData(this,workEntryDao, testUserId)
+                  /*  val testUserId = 1
+
+                 lifecycleScope.launch {
+                        TestDataGenerator.addTestData(this,workEntryDao, testUserId)
                     }
                     */
 
@@ -257,71 +265,35 @@ fun GreetingPreview() {
 }
 val LightBlue = Color(0xFF5263b7)
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
-    val userInfo by mainViewModel.userInfo.observeAsState()
-    val userId = userInfo?.id
-    val showDialog = remember { mutableStateOf(false) }// Show dialog if userInfo is null
-    val showSettingsDialog =
-        remember { mutableStateOf(false) } // Separate state for settings dialog
-
-    // React to userInfo changes to close the dialog if userInfo is not null
-    LaunchedEffect(userInfo) {
-        showDialog.value = userInfo == null
-    }
+    val currentScreen = remember { mutableStateOf("Home") }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Workplace Tracker") }) },
         floatingActionButton = {
-            // Settings button
-            FloatingActionButton(onClick = { showSettingsDialog.value = true }) {
-                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+            if (currentScreen.value == "Home") {
+                FloatingActionButton(onClick = { /* Action */ }) {
+                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                }
             }
-
+        },
+        bottomBar = {
+            BottomNavigationBar(currentScreen.value) { screen ->
+                currentScreen.value = screen
+            }
         }
     ) { innerPadding ->
-        Surface(modifier = Modifier.padding(innerPadding)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-
-                TimerScreen(timerViewModel = viewModel())
-
-                // User Info Dialog
-                if (showDialog.value) {
-                    UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
-                }
-
-                // Settings Dialog
-                if (showSettingsDialog.value) {
-                    SettingsDialog(showDialog = showSettingsDialog) {
-                        // Actions to perform when the settings dialog is dismissed, if any
-                    }
-                }
+        Box(modifier = Modifier.padding(innerPadding)) {
+            when (currentScreen.value) {
+                "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
+                "Profile" -> UserProfileScreen() // Adjust this with actual implementation
+                "Settings" -> SettingsScreen() // Adjust this with actual implementation
+                // Add other cases as needed
             }
-
-            userId?.let { id ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize() // Fill the parent
-                        .padding(bottom = innerPadding.calculateBottomPadding()),
-                    contentAlignment = Alignment.BottomCenter // Align contents to the bottom center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    ) {
-                        Text(
-                            text = "Tehdyt tunnit",
-                            fontSize = 20.sp,
-                            modifier = Modifier.padding(bottom = 2.dp) // Space out from the grey box
-                        )
-                        // Grey box for displaying work entries
-                        WorkEntriesDisplay(mainViewModel = mainViewModel, userId = id)
-                    }
-                }
-            } ?: CircularProgressIndicator()
-
 
 
         }
@@ -329,30 +301,87 @@ fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
 }
 
 @Composable
-fun TimerScreen(timerViewModel: TimerViewModel = viewModel()) {
-    // Collecting the StateFlow from ViewModel correctly
-    val time by timerViewModel.time.collectAsState()
+fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
+    val userInfo by mainViewModel.userInfo.observeAsState()
+    val userId = userInfo?.id
+    val showDialog = remember { mutableStateOf(false) }
+    val showSettingsDialog = remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // Initialize dialog states based on userInfo
+    LaunchedEffect(userInfo) {
+        Log.d("HomeScreen", "UserInfo changed: $userInfo")
+        showDialog.value = userInfo == null
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // TimerScreen, not using weight because we don't want it to expand more than its content
+        TimerScreen(timerViewModel = timerViewModel)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Conditional display based on userId presence
+        if (userId != null) {
+            // Using Modifier.weight(1f) to make WorkedHoursDisplay take up remaining space
+            WorkedHoursDisplay(mainViewModel, userId)
+        } else {
+            Text("User ID is null", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(8.dp))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+
+    // Display dialogs based on their respective state
+    if (showDialog.value) {
+        UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
+    }
+
+    if (showSettingsDialog.value) {
+        SettingsDialog(showDialog = showSettingsDialog) {
+            // Handle dialog dismissal actions here
+        }
+    }
+}
+
+@Composable
+fun WorkedHoursDisplay(mainViewModel: MainViewModel, userId: Int) {
+    // Apply Modifier.weight(1f) to fill remaining space and Modifier.fillMaxWidth() to fill width
+    Box(modifier = Modifier
+        .fillMaxWidth() // Fill the width of its parent
+         // Use weight to make it fill the remaining space
+        .fillMaxHeight()
+        .padding(16.dp)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .offset(y = (-50).dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = time,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier
-                    .padding(16.dp)
-                    .clickable { timerViewModel.toggleTimer() }
-            )
-            Button(
-                onClick = { timerViewModel.resetTimer() },
-                modifier = Modifier.padding(bottom = 250.dp)
-            ) {
-                Text("Reset")
-            }
+            Text("Tehdyt tunnit", fontSize = 20.sp)
+            // Implementation for displaying work entries
+            WorkEntriesDisplay(mainViewModel = mainViewModel, userId = userId)
+        }
+    }
+}
+@Composable
+fun TimerScreen(timerViewModel: TimerViewModel = viewModel()) {
+    val time by timerViewModel.time.collectAsState()
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth() // Use fillMaxWidth instead of fillMaxSize
+            .padding(vertical = 16.dp) // Add vertical padding if needed
+    ) {
+        Text(
+            text = time,
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier
+                .padding(16.dp)
+                .clickable { timerViewModel.toggleTimer() }
+        )
+        Button(
+            onClick = { timerViewModel.resetTimer() },
+            // Consider removing or adjusting the bottom padding if it's too large
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            Text("Reset")
         }
     }
 }
@@ -463,17 +492,7 @@ fun TimerNotificationObserver(
         }
     }
 }
-@Composable
-fun TimerAndWorkEntriesScreen(timerViewModel: TimerViewModel, mainViewModel: MainViewModel, userId: Int) {
-    // Your existing TimerScreen composable content
-    Column {
-        Button(onClick = { timerViewModel.stopTimerAndSaveEntry(userId) }) {
-            Text("Stop Timer & Save")
-        }
 
-        WorkEntriesDisplay(mainViewModel, userId)
-    }
-}
 
 @Composable
 fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
@@ -483,7 +502,7 @@ fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.5f)
+            .fillMaxHeight()
             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
             .background(color = LightBlue),
         contentAlignment = Alignment.Center // Center the content vertically
@@ -505,4 +524,38 @@ fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
             }
         }
     }
+}
+@Composable
+fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
+    NavigationBar {
+        val items = listOf(
+            NavigationItem("Home", Icons.Filled.Home),
+            NavigationItem("Profile", Icons.Filled.Favorite), // Assuming you have an appropriate icon
+            NavigationItem("Settings", Icons.Filled.Settings)
+        )
+        items.forEach { item ->
+            NavigationBarItem(
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = { Text(item.title) },
+                selected = currentRoute == item.title,
+                onClick = { onNavigate(item.title) }
+            )
+        }
+    }
+}
+data class NavigationItem(val title: String, val icon: ImageVector)
+
+@Composable
+fun UserProfileScreen() {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(text = "Name: Testi timo", style = MaterialTheme.typography.headlineLarge)
+        Text(text = "Email: testi2", style = MaterialTheme.typography.bodyMedium)
+        Text(text = "Job: Opiskelija", style = MaterialTheme.typography.bodyMedium)
+        Text(text = "Location: Helsinki", style = MaterialTheme.typography.bodyMedium)
+    }
+}
+// Placeholder for SettingsScreen
+@Composable
+fun SettingsScreen() {
+    // Your Settings Screen content goes here
 }
