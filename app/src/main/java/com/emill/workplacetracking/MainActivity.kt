@@ -11,6 +11,9 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,8 +32,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -77,6 +82,7 @@ import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -272,93 +278,123 @@ val LightBlue = Color(0xFF5263b7)
 @Composable
 fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
     val currentScreen = remember { mutableStateOf("Home") }
+    val userInfo by mainViewModel.userInfo.observeAsState()
+    // Use an additional state to track whether the userInfo fetch has been attempted.
+    val fetchAttempted = remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Workplace Tracker") }) },
-        floatingActionButton = {
-            if (currentScreen.value == "Home") {
-                FloatingActionButton(onClick = { /* Action */ }) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
+    // Observe userInfo and update fetchAttempted accordingly.
+    LaunchedEffect(userInfo) {
+        fetchAttempted.value = true
+    }
+
+    // Determine loading state based on whether a fetch attempt has been made, rather than userInfo content.
+    val isLoading = !fetchAttempted.value
+
+    if (isLoading) {
+        LoadingScreen("Loading, please wait...")
+    } else {
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("Workplace Tracker") }) },
+            floatingActionButton = {
+                if (currentScreen.value == "Home") {
+                    FloatingActionButton(onClick = { /* Implement action */ }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                }
+            },
+            bottomBar = {
+                BottomNavigationBar(currentScreen.value) { screen ->
+                    currentScreen.value = screen
                 }
             }
-        },
-        bottomBar = {
-            BottomNavigationBar(currentScreen.value) { screen ->
-                currentScreen.value = screen
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                when (currentScreen.value) {
+                    "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
+                    "Profile" -> UserProfileScreen() // Placeholder, implement your logic here
+                    "Gps" -> GpsScreen() // Placeholder, implement your logic here
+                    // Add other cases as needed
+                }
             }
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
-            when (currentScreen.value) {
-                "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
-                "Profile" -> UserProfileScreen() // Adjust this with actual implementation
-                "Settings" -> SettingsScreen() // Adjust this with actual implementation
-                // Add other cases as needed
-            }
-
-
         }
     }
 }
+
+
 
 @Composable
 fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
     val userInfo by mainViewModel.userInfo.observeAsState()
-    val userId = userInfo?.id
-    val showDialog = remember { mutableStateOf(false) }
-    val showSettingsDialog = remember { mutableStateOf(false) }
+    val userId by mainViewModel.userId.observeAsState()
 
-    // Initialize dialog states based on userInfo
-    LaunchedEffect(userInfo) {
-        Log.d("HomeScreen", "UserInfo changed: $userInfo")
+    // Track if the initial data fetch has been completed.
+    val dataFetchCompleted = remember { mutableStateOf(false) }
+    val showDialog = remember { mutableStateOf(false) }
+
+    // Adjust LaunchedEffect to set dataFetchCompleted to true once userInfo is observed.
+    LaunchedEffect(key1 = userInfo) {
+        dataFetchCompleted.value = true
         showDialog.value = userInfo == null
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // TimerScreen, not using weight because we don't want it to expand more than its content
-        TimerScreen(timerViewModel = timerViewModel)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Conditional display based on userId presence
-        if (userId != null) {
-            // Using Modifier.weight(1f) to make WorkedHoursDisplay take up remaining space
-            WorkedHoursDisplay(mainViewModel, userId)
-        } else {
-            Box(
-                modifier = Modifier
-                    .weight(1f) // Use weight to make the Box take up remaining space
-                    .fillMaxWidth(), // Fill the available width
-                contentAlignment = Alignment.Center // Center content both horizontally and vertically
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.width(64.dp),
-                    color = MaterialTheme.colorScheme.secondary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-            }
+    if (!dataFetchCompleted.value) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.width(64.dp),
+                color = MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
         }
-        Spacer(modifier = Modifier.height(8.dp))
-    }
+    } else {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TimerScreen(timerViewModel = timerViewModel)
+            Spacer(modifier = Modifier.height(16.dp))
 
-    // Display dialogs based on their respective state
-    if (showDialog.value) {
-        UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
-    }
+            if (userId != null) {
+                WorkedHoursDisplay(mainViewModel, userId!!)
+            } else if (showDialog.value) {
+                // Conditionally display the UserInfoDialog based on showDialog state.
+                UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
+            }
 
-    if (showSettingsDialog.value) {
-        SettingsDialog(showDialog = showSettingsDialog) {
-            // Handle dialog dismissal actions here
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
-
+@Composable
+fun LoadingScreen(message: String = "Loading...") {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = message, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+@Composable
+fun AnimatedLoadingScreen(isLoading: Boolean, message: String = "Loading...") {
+    AnimatedVisibility(
+        visible = isLoading,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        LoadingScreen(message)
+    }
+}
 @Composable
 fun WorkedHoursDisplay(mainViewModel: MainViewModel, userId: Int) {
     // Apply Modifier.weight(1f) to fill remaining space and Modifier.fillMaxWidth() to fill width
     Box(modifier = Modifier
         .fillMaxWidth() // Fill the width of its parent
-         // Use weight to make it fill the remaining space
+        // Use weight to make it fill the remaining space
         .fillMaxHeight()
         .padding(16.dp)) {
         Column(
@@ -542,8 +578,8 @@ fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
     NavigationBar {
         val items = listOf(
             NavigationItem("Home", Icons.Filled.Home),
-            NavigationItem("Profile", Icons.Filled.Favorite), // Assuming you have an appropriate icon
-            NavigationItem("Settings", Icons.Filled.Settings)
+            NavigationItem("Profile", Icons.Filled.AccountCircle), // Assuming you have an appropriate icon
+            NavigationItem("Gps", Icons.Filled.LocationOn)
         )
         items.forEach { item ->
             NavigationBarItem(
@@ -568,6 +604,6 @@ fun UserProfileScreen() {
 }
 // Placeholder for SettingsScreen
 @Composable
-fun SettingsScreen() {
-    // Your Settings Screen content goes here
+fun GpsScreen() {
+    // Your GPS Screen content goes here
 }

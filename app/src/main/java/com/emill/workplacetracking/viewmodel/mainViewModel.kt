@@ -23,10 +23,11 @@ class MainViewModel(
     private val workEntryDao: WorkEntryDao // Add this
 ) : ViewModel() {
     // Using liveData builder to call suspend function
-    val userInfo = liveData {
+   /* val userInfo = liveData {
         val data = userInfoDao.getUserInfo() // This is a suspend function call
         emit(data) // Emitting the result to LiveData
-    }
+    }*/
+    val userInfo = userInfoDao.getUserInfo1()
     private val _userId = MutableLiveData<Int>()
     val userId: LiveData<Int> = _userId
 
@@ -58,5 +59,6 @@ class MainViewModel(
         }
         emit(currentWeekEntries)
     }
+
 
 }
