@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -324,7 +325,18 @@ fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
             // Using Modifier.weight(1f) to make WorkedHoursDisplay take up remaining space
             WorkedHoursDisplay(mainViewModel, userId)
         } else {
-            Text("User ID is null", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(8.dp))
+            Box(
+                modifier = Modifier
+                    .weight(1f) // Use weight to make the Box take up remaining space
+                    .fillMaxWidth(), // Fill the available width
+                contentAlignment = Alignment.Center // Center content both horizontally and vertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.width(64.dp),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
     }
