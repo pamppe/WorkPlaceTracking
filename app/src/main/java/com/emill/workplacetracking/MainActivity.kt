@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -25,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,7 +31,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
@@ -48,7 +45,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -65,14 +61,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.emill.workplacetracking.db.AppDatabase
@@ -82,8 +79,15 @@ import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import org.osmdroid.config.Configuration
+import org.osmdroid.library.BuildConfig
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polygon
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 
 class MainActivity : ComponentActivity() {
@@ -100,8 +104,8 @@ class MainActivity : ComponentActivity() {
                 // Use your location here
                 // Example: Check if within workplace
                 val workplaceLocation = Location("").apply {
-                    latitude = 60.158243 // Workplace latitude change to your workplace latitude
-                        longitude = 24.879649 // Workplace longitude change to your workplace longitude
+                    latitude = 60.224159 // Workplace latitude change to your workplace latitude
+                        longitude = 24.756550 // Workplace longitude change to your workplace longitude
                 }
                 val isWithinWorkplace = gpsManager.isWithinWorkplace(location, workplaceLocation, 100f) // Radius in meters
 
@@ -116,7 +120,11 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // Set user agent to avoid getting blocked by the OSM servers
+        Configuration.getInstance().userAgentValue = BuildConfig.BUILD_TYPE
         super.onCreate(savedInstanceState)
+
         gpsManager = GPSManager(this)
         // Don't forget to request permissions before starting location updates
         // Check for location permissions
@@ -215,7 +223,6 @@ class MainActivity : ComponentActivity() {
         }
 
     private fun createNotificationChannel() {
-
         val name = getString(R.string.channel_name) // Define this in your strings.xml
         val descriptionText = getString(R.string.channel_description) // And this
         val importance = NotificationManager.IMPORTANCE_DEFAULT
@@ -255,6 +262,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
@@ -271,7 +279,6 @@ fun GreetingPreview() {
     }
 }
 val LightBlue = Color(0xFF5263b7)
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -602,8 +609,67 @@ fun UserProfileScreen() {
         Text(text = "Location: Helsinki", style = MaterialTheme.typography.bodyMedium)
     }
 }
-// Placeholder for SettingsScreen
+
 @Composable
-fun GpsScreen() {
-    // Your GPS Screen content goes here
+fun OsmMapViewWithLocationAndAreaWithButton(context: Context) {
+    val mapView = remember { MapView(context) }
+    val workplaceLocation = GeoPoint(60.158243, 24.879649) // Example coordinates
+    val workplaceRadius = 100.0 // Radius in meters
+
+    Column {
+        AndroidView(
+            factory = { mapView },
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            update = { mapView ->
+                // Basic map setup
+                mapView.setTileSource(TileSourceFactory.MAPNIK)
+                mapView.setMultiTouchControls(true)
+                val mapController = mapView.controller
+                mapController.setZoom(18.0)
+                mapView.controller.setCenter(workplaceLocation)
+
+                // Marker for workplace
+                val marker = Marker(mapView).apply {
+                    position = workplaceLocation
+                    // icon = context.resources.getDrawable(R.drawable.ic_workplace, context.theme)
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                }
+                mapView.overlays.add(marker)
+
+                // Circle for workplace radius
+                val circle = Polygon().apply {
+                    points = Polygon.pointsAsCircle(workplaceLocation, workplaceRadius)
+                    fillColor = 0x15FF4081 // Semi-transparent pink
+                    strokeColor = 0xFF0000FF.toInt() // Solid blue border
+                    strokeWidth = 2f
+                }
+                mapView.overlays.add(circle)
+
+                // User location overlay with custom icon (if necessary)
+                val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView).apply {
+                    enableMyLocation()
+                    // For custom icon, uncomment and replace R.drawable.ic_user_location with your drawable
+                    // myLocationIcon = context.resources.getDrawable(R.drawable.ic_user_location, context.theme)
+                }
+                mapView.overlays.add(myLocationOverlay)
+            }
+        )
+        Button(
+            onClick = {
+                mapView.controller.setCenter(workplaceLocation)
+                mapView.controller.zoomTo(18.0)
+            },
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Navigate to Workplace")
+        }
+    }
+}
+
+@Composable
+fun GpsScreen(context: Context = LocalContext.current) {
+    // Call OsmMapViewWithLocationAndArea to display the map with user location and workplace area
+    OsmMapViewWithLocationAndAreaWithButton(context)
 }
