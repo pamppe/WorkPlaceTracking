@@ -610,11 +610,13 @@ fun UserProfileScreen() {
     }
 }
 
+
+val workplaceGeoPoint = GeoPoint(60.223737, 24.758079) // Convert workplace location to GeoPoint
+const val workplaceRadius = 200.0 // meters
 @Composable
-fun OsmMapViewWithLocationAndAreaWithButton(context: Context) {
+fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation: GeoPoint, workplaceRadius: Double) {
     val mapView = remember { MapView(context) }
-    val workplaceLocation = GeoPoint(60.158243, 24.879649) // Example coordinates
-    val workplaceRadius = 100.0 // Radius in meters
+    val userLocationMarker = remember { Marker(mapView) }
 
     Column {
         AndroidView(
@@ -623,43 +625,54 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context) {
                 .weight(1f)
                 .fillMaxWidth(),
             update = { mapView ->
-                // Basic map setup
-                mapView.setTileSource(TileSourceFactory.MAPNIK)
-                mapView.setMultiTouchControls(true)
-                val mapController = mapView.controller
-                mapController.setZoom(18.0)
-                mapView.controller.setCenter(workplaceLocation)
+                mapView.apply {
+                    setTileSource(TileSourceFactory.MAPNIK)
+                    controller.setCenter(workplaceLocation)
+                    setMultiTouchControls(true)
 
-                // Marker for workplace
-                val marker = Marker(mapView).apply {
-                    position = workplaceLocation
-                    // icon = context.resources.getDrawable(R.drawable.ic_workplace, context.theme)
-                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                }
-                mapView.overlays.add(marker)
+                    // Add marker for workplace
+                    overlays.add(Marker(mapView).apply {
+                        position = workplaceLocation
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        title = "Workplace"
+                       // icon = context.getDrawable(R.drawable.ic_workplace_marker) // Custom icon for workplace
+                    })
 
-                // Circle for workplace radius
-                val circle = Polygon().apply {
-                    points = Polygon.pointsAsCircle(workplaceLocation, workplaceRadius)
-                    fillColor = 0x15FF4081 // Semi-transparent pink
-                    strokeColor = 0xFF0000FF.toInt() // Solid blue border
-                    strokeWidth = 2f
-                }
-                mapView.overlays.add(circle)
+                    // Add polygon for workplace radius
+                    overlays.add(Polygon().apply {
+                        points = Polygon.pointsAsCircle(workplaceLocation, workplaceRadius)
+                        fillColor = 0x25FF0000 // Example semi-transparent fill
+                    })
 
-                // User location overlay with custom icon (if necessary)
-                val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView).apply {
-                    enableMyLocation()
-                    // For custom icon, uncomment and replace R.drawable.ic_user_location with your drawable
-                    // myLocationIcon = context.resources.getDrawable(R.drawable.ic_user_location, context.theme)
+                    // Setup for user location marker (similar appearance to workplace marker)
+                    userLocationMarker.apply {
+                        position = GeoPoint(0.0,0.0) // Placeholder, will update on location change
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        //icon = ContextCompat.getDrawable(context, R.drawable.your_marker_icon)
+                        title = "My Location" // Set title for user's location marker
+                    }
+                    overlays.add(userLocationMarker)
+
+                    // Overlay for user's location
+                    val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), this).apply {
+                        enableMyLocation()
+                    }
+                    overlays.add(myLocationOverlay)
+                    // Example to update user location marker based on location updates
+                    myLocationOverlay.runOnFirstFix {
+                        val userLocation = myLocationOverlay.myLocation
+                        userLocation?.let {
+                            userLocationMarker.position = it
+                            mapView.invalidate() // Refresh map
+                        }
+                    }
                 }
-                mapView.overlays.add(myLocationOverlay)
             }
         )
         Button(
             onClick = {
                 mapView.controller.setCenter(workplaceLocation)
-                mapView.controller.zoomTo(18.0)
+                mapView.controller.setZoom(18.0)
             },
             modifier = Modifier.padding(16.dp)
         ) {
@@ -671,5 +684,5 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context) {
 @Composable
 fun GpsScreen(context: Context = LocalContext.current) {
     // Call OsmMapViewWithLocationAndArea to display the map with user location and workplace area
-    OsmMapViewWithLocationAndAreaWithButton(context)
+    OsmMapViewWithLocationAndAreaWithButton(context, workplaceGeoPoint, workplaceRadius)
 }
