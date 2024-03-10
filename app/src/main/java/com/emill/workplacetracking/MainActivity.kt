@@ -821,6 +821,11 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation:
                     isHorizontalMapRepetitionEnabled = false
                     isVerticalMapRepetitionEnabled = false
                     minZoomLevel = 2.0
+                    setScrollableAreaLimitLatitude(MapView.getTileSystem().getMaxLatitude(),
+                        MapView.getTileSystem().getMinLatitude(), 0);
+                    setScrollableAreaLimitLongitude(MapView.getTileSystem().getMaxLongitude(),
+                        MapView.getTileSystem().getMinLongitude(), 0);
+
 
                     setTileSource(TileSourceFactory.MAPNIK)
                     controller.setCenter(workplaceLocation)
