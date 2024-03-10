@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,7 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
@@ -46,14 +44,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -65,22 +61,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.emill.workplacetracking.db.AppDatabase
@@ -91,8 +87,15 @@ import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import org.osmdroid.config.Configuration
+import org.osmdroid.library.BuildConfig
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polygon
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -114,8 +117,8 @@ class MainActivity : ComponentActivity() {
                 // Use your location here
                 // Example: Check if within workplace
                 val workplaceLocation = Location("").apply {
-                    latitude = 60.158243 // Workplace latitude change to your workplace latitude
-                        longitude = 24.879649 // Workplace longitude change to your workplace longitude
+                    latitude = 60.224159 // Workplace latitude change to your workplace latitude
+                        longitude = 24.756550 // Workplace longitude change to your workplace longitude
                 }
                 val isWithinWorkplace = gpsManager.isWithinWorkplace(location, workplaceLocation, 100f) // Radius in meters
 
@@ -130,7 +133,12 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // Set user agent to avoid getting blocked by the OSM servers
+        val userAgentValue: String = "com.emill.workplacetracking"
+        Configuration.getInstance().userAgentValue = userAgentValue
         super.onCreate(savedInstanceState)
+
         gpsManager = GPSManager(this)
         // Don't forget to request permissions before starting location updates
         // Check for location permissions
@@ -229,7 +237,6 @@ class MainActivity : ComponentActivity() {
         }
 
     private fun createNotificationChannel() {
-
         val name = getString(R.string.channel_name) // Define this in your strings.xml
         val descriptionText = getString(R.string.channel_description) // And this
         val importance = NotificationManager.IMPORTANCE_DEFAULT
@@ -269,6 +276,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
@@ -285,7 +293,6 @@ fun GreetingPreview() {
     }
 }
 val LightBlue = Color(0xFF5263b7)
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -793,8 +800,81 @@ fun TotalHoursRecordedCard(totalHours: Int, hourlyRate: Double) {
         }
     }
 }
-// Placeholder for SettingsScreen
+
+
+val workplaceGeoPoint = GeoPoint(60.223737, 24.758079) // Convert workplace location to GeoPoint
+const val workplaceRadius = 200.0 // meters
 @Composable
-fun GpsScreen() {
-    // Your GPS Screen content goes here
+fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation: GeoPoint, workplaceRadius: Double) {
+    Log.d("Map", "Map Composable triggered")
+    val mapView = remember { MapView(context) }
+    val userLocationMarker = remember { Marker(mapView) }
+    mapView.overlays.clear()
+    Column {
+        AndroidView(
+            factory = { mapView },
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            update = { mapView ->
+                mapView.apply {
+                    isHorizontalMapRepetitionEnabled = false
+                    isVerticalMapRepetitionEnabled = false
+                    minZoomLevel = 2.0
+
+                    setTileSource(TileSourceFactory.MAPNIK)
+                    controller.setCenter(workplaceLocation)
+                    setMultiTouchControls(true)
+
+                    // Add marker for workplace
+                    overlays.add(Marker(mapView).apply {
+                        position = workplaceLocation
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        title = "Workplace"
+                       // icon = context.getDrawable(R.drawable.ic_workplace_marker) // Custom icon for workplace
+                    })
+
+                    // Add polygon for workplace radius
+                    overlays.add(Polygon().apply {
+                        points = Polygon.pointsAsCircle(workplaceLocation, workplaceRadius)
+                        fillColor = 0x25FF0000 // Example semi-transparent fill
+                    })
+
+                    // Setup for user location marker (similar appearance to workplace marker)
+                    userLocationMarker.apply {
+                        position = GeoPoint(0.0,0.0) // Placeholder, will update on location change
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        //icon = ContextCompat.getDrawable(context, R.drawable.your_marker_icon)
+                        title = "My Location" // Set title for user's location marker
+                    }
+                    overlays.add(userLocationMarker)
+
+                    // Overlay for user's location
+                    val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), this).apply {
+                        enableMyLocation()
+                    }
+                    overlays.add(myLocationOverlay)
+                    // Example to update user location marker based on location updates
+
+
+                }
+            }
+        )
+        Button(
+            onClick = {
+                mapView.controller.setZoom(18.0)
+                mapView.controller.setCenter(workplaceLocation)
+            },
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Navigate to Workplace")
+        }
+    }
+}
+
+@Composable
+fun GpsScreen(context: Context = LocalContext.current) {
+    Log.d("Gps Screen","Gps Screen triggered")
+    // Call OsmMapViewWithLocationAndArea to display the map with user location and workplace area
+    OsmMapViewWithLocationAndAreaWithButton(context, workplaceGeoPoint, workplaceRadius)
 }
