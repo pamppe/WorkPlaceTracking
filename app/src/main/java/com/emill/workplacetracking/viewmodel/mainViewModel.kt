@@ -59,6 +59,20 @@ class MainViewModel(
         }
         emit(currentWeekEntries)
     }
+    fun getWorkEntriesForCurrentMonth(userId: Int): LiveData<List<WorkEntry>> = liveData {
+        val allEntries = workEntryDao.getWorkEntriesForUser(userId) // Assuming this is a suspend function
+        val currentMonthEntries = allEntries.filter {
+            val entryDate = LocalDate.parse(it.date) // Assumes ISO format: yyyy-MM-dd
+            val now = LocalDate.now()
+            entryDate.month == now.month && entryDate.year == now.year
+        }
+        emit(currentMonthEntries)
+    }
+    fun getTotalHoursAllTime(userId: Int): LiveData<Int> = liveData {
+        val allEntries = workEntryDao.getWorkEntriesForUser(userId) // Assuming this is a suspend function
+        val totalHours = allEntries.sumOf { it.hoursWorked }
+        emit(totalHours)
+    }
 
 
 }

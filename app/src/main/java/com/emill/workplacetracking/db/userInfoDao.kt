@@ -16,6 +16,6 @@ interface UserInfoDao {
     suspend fun getUserInfo(): UserInfo? // Directly returns UserInfo or null
 
     @Query("SELECT * FROM UserInfo LIMIT 1")
-    fun getUserInfo1(): LiveData<UserInfo> // Directly returns UserInfo or null
+    fun getUserInfo1(): LiveData<UserInfo>
 
 }
