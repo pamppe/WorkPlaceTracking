@@ -10,3 +10,7 @@ data class WorkEntry(
     val hoursWorked: Int,
     val userId: Int // Assuming you want to link this entry to a specific user
 )
+data class AggregatedWorkEntry(
+    val date: String,
+    val totalHoursWorked: Int
+)
