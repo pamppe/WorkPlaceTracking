@@ -109,8 +109,9 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     companion object {
         private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
+        private const val locationPermissionRequestCode = 1000
+        private const val backgroundLocationRequestCode = 1002 // Define this
     }
-
     private lateinit var gpsManager: GPSManager
     private val locationPermissionRequestCode = 1000
 
@@ -144,7 +145,8 @@ class MainActivity : ComponentActivity() {
 
         // Requesting location permissions
         checkAndRequestLocationPermissions()
-
+        // Don't forget to request permissions before starting location updates
+        // Check for location permissions
 
         // Initialize your database and DAO here
         val appDatabase: AppDatabase = Room.databaseBuilder(
@@ -201,43 +203,27 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun checkAndRequestLocationPermissions() {
-        val foregroundLocationApproved =
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
-
-        val backgroundPermissionApproved =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
-                        PackageManager.PERMISSION_GRANTED
-            } else {
-                true // Background location not needed for pre-Q devices
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED -> {
+                // Foreground location permission has not been granted yet, request it
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    locationPermissionRequestCode)
             }
-
-        val shouldProvideRationale =
-            ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)
-
-        // If foreground and background permissions are not approved, request them
-        if (!foregroundLocationApproved || !backgroundPermissionApproved) {
-            // Provide an additional rationale to the user if the permission was not granted
-            // and the user would benefit from additional context for the use of the permission.
-            if (shouldProvideRationale) {
-                // Show your own UI to explain why the permission is needed before trying again
-                // e.g., showRationaleDialog()
-            } else {
-                // You can directly ask for the permission.
-                val permissionRequestList = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    permissionRequestList.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                }
-                ActivityCompat.requestPermissions(
-                    this,
-                    permissionRequestList.toTypedArray(),
-                    locationPermissionRequestCode
-                )
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED -> {
+                // On Android 10 and above, request background location permission separately
+                // This request must come AFTER foreground permission has been granted
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                    backgroundLocationRequestCode)
             }
-        } else {
-            // Permissions are granted, start location tracking
-            startLocationTracking()
+            else -> {
+                // All necessary permissions have been granted, start location tracking
+                startLocationTracking()
+            }
         }
     }
 
@@ -261,13 +247,22 @@ class MainActivity : ComponentActivity() {
         // Override onRequestPermissionsResult to handle permission request responses
         override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            if (requestCode == REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION) {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission was granted
-                    // You can now proceed with showing notifications or any other logic that requires this permission
-                } else {
-                    // Permission was denied
-                    // Handle the denial accordingly, possibly by informing the user of the functionality they're missing out on
+            when (requestCode) {
+                locationPermissionRequestCode -> {
+                    if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        // Foreground location permission granted, now check/request background location permission
+                        checkAndRequestLocationPermissions()
+                    } else {
+                        // Handle the case where the user denies the foreground location permission
+                    }
+                }
+                backgroundLocationRequestCode -> {
+                    if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        // Background location permission granted
+                        startLocationTracking()
+                    } else {
+                        // Handle the case where the user denies the background location permission
+                    }
                 }
             }
         }
