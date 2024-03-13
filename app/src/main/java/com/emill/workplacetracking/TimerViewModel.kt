@@ -30,6 +30,10 @@ class TimerViewModel(
     private var seconds = 0
     private var isRunning = false
 
+    // Public method to check if the timer is running
+    fun isTimerRunning(): Boolean {
+        return isRunning
+    }
 
     fun toggleTimer() {
         if (isRunning) {
@@ -39,7 +43,7 @@ class TimerViewModel(
         }
     }
 
-    private fun startTimer() {
+    fun startTimer() {
         isRunning = true
         _timerNotifications.value = "Timer Started"
         job = scope.launch {

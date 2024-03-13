@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -85,7 +86,9 @@ import com.emill.workplacetracking.db.UserInfo
 import com.emill.workplacetracking.db.WorkEntry
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
@@ -133,22 +136,15 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
-        // Set user agent to avoid getting blocked by the OSM servers
-        val userAgentValue: String = "com.emill.workplacetracking"
-        Configuration.getInstance().userAgentValue = userAgentValue
         super.onCreate(savedInstanceState)
 
+        Configuration.getInstance().userAgentValue = "com.emill.workplacetracking"
+
         gpsManager = GPSManager(this)
-        // Don't forget to request permissions before starting location updates
-        // Check for location permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Permission is not granted, request it
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionRequestCode)
-        } else {
-            // Permission is granted, you can start location updates
-            startLocationTracking()
-        }
+
+        // Requesting location permissions
+        checkAndRequestLocationPermissions()
+
 
         // Initialize your database and DAO here
         val appDatabase: AppDatabase = Room.databaseBuilder(
@@ -202,6 +198,46 @@ class MainActivity : ComponentActivity() {
                 )
                 MyApp(mainViewModel,timerViewModel)
             }
+        }
+    }
+    private fun checkAndRequestLocationPermissions() {
+        val foregroundLocationApproved =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+
+        val backgroundPermissionApproved =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
+                        PackageManager.PERMISSION_GRANTED
+            } else {
+                true // Background location not needed for pre-Q devices
+            }
+
+        val shouldProvideRationale =
+            ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)
+
+        // If foreground and background permissions are not approved, request them
+        if (!foregroundLocationApproved || !backgroundPermissionApproved) {
+            // Provide an additional rationale to the user if the permission was not granted
+            // and the user would benefit from additional context for the use of the permission.
+            if (shouldProvideRationale) {
+                // Show your own UI to explain why the permission is needed before trying again
+                // e.g., showRationaleDialog()
+            } else {
+                // You can directly ask for the permission.
+                val permissionRequestList = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    permissionRequestList.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                }
+                ActivityCompat.requestPermissions(
+                    this,
+                    permissionRequestList.toTypedArray(),
+                    locationPermissionRequestCode
+                )
+            }
+        } else {
+            // Permissions are granted, start location tracking
+            startLocationTracking()
         }
     }
 
@@ -820,7 +856,7 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation:
                 mapView.apply {
                     isHorizontalMapRepetitionEnabled = false
                     isVerticalMapRepetitionEnabled = false
-                    minZoomLevel = 2.0
+                    minZoomLevel = 3.5
 
                     setTileSource(TileSourceFactory.MAPNIK)
                     controller.setCenter(workplaceLocation)
@@ -839,15 +875,6 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation:
                         points = Polygon.pointsAsCircle(workplaceLocation, workplaceRadius)
                         fillColor = 0x25FF0000 // Example semi-transparent fill
                     })
-
-                    // Setup for user location marker (similar appearance to workplace marker)
-                    userLocationMarker.apply {
-                        position = GeoPoint(0.0,0.0) // Placeholder, will update on location change
-                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                        //icon = ContextCompat.getDrawable(context, R.drawable.your_marker_icon)
-                        title = "My Location" // Set title for user's location marker
-                    }
-                    overlays.add(userLocationMarker)
 
                     // Overlay for user's location
                     val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), this).apply {
@@ -877,4 +904,41 @@ fun GpsScreen(context: Context = LocalContext.current) {
     Log.d("Gps Screen","Gps Screen triggered")
     // Call OsmMapViewWithLocationAndArea to display the map with user location and workplace area
     OsmMapViewWithLocationAndAreaWithButton(context, workplaceGeoPoint, workplaceRadius)
+}
+fun setupLocationUpdates(
+    context: Context,
+    locationClient: FusedLocationProviderClient,
+    workplaceLocation: GeoPoint,
+    workplaceRadius: Double,
+    timerViewModel: TimerViewModel
+) {
+    val locationRequest = LocationRequest.create().apply {
+        interval = 10000 // Desired update interval in milliseconds
+        fastestInterval = 5000 // Fastest interval app can handle updates
+        priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+    }
+
+    val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            super.onLocationResult(locationResult) // Call the superclass method
+            for (location in locationResult.locations) {
+                // Process the incoming location update
+                val userLocation = GeoPoint(location.latitude, location.longitude)
+                val distance = userLocation.distanceToAsDouble(workplaceLocation)
+
+                if (distance <= workplaceRadius && !timerViewModel.isTimerRunning()) {
+                    timerViewModel.startTimer()
+                } else if (distance > workplaceRadius && timerViewModel.isTimerRunning()) {
+                    timerViewModel.stopTimerAndSaveEntry(1)
+                }
+            }
+        }
+    }
+
+    // Don't forget to request permissions before calling this
+    locationClient.requestLocationUpdates(
+        locationRequest,
+        locationCallback,
+        Looper.getMainLooper()
+    )
 }
