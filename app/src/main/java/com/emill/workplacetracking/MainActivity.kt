@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,9 +27,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -37,6 +40,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults.containerColor
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,9 +54,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -67,8 +73,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -142,9 +152,17 @@ class MainActivity : ComponentActivity() {
         gpsManager = GPSManager(this)
         // Don't forget to request permissions before starting location updates
         // Check for location permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             // Permission is not granted, request it
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionRequestCode)
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                locationPermissionRequestCode
+            )
         } else {
             // Permission is granted, you can start location updates
             startLocationTracking()
@@ -187,7 +205,7 @@ class MainActivity : ComponentActivity() {
 
             //---- Add test data to the database ---//
 
-                  /*  val testUserId = 1
+            /*  val testUserId = 1
 
                  lifecycleScope.launch {
                         TestDataGenerator.addTestData(this,workEntryDao, testUserId)
@@ -196,14 +214,14 @@ class MainActivity : ComponentActivity() {
 
             WorkPlaceTrackingTheme {
                 // Here we pass the method as a lambda function
-                TimerNotificationObserver(
-                    timerViewModel = timerViewModel,
-                    showNotification = { message -> showNotification(message) }
-                )
-                MyApp(mainViewModel,timerViewModel)
+                    TimerNotificationObserver(
+                        timerViewModel = timerViewModel,
+                        showNotification = { message -> showNotification(message) }
+                    )
+                    MyApp(mainViewModel, timerViewModel)
+                }
             }
         }
-    }
 
 
     private fun startLocationTracking() {
@@ -293,6 +311,14 @@ fun GreetingPreview() {
     }
 }
 val LightBlue = Color(0xFF5263b7)
+val customFontFamily = FontFamily(Font(R.font.koulenregular))
+
+
+val customTextStyle = TextStyle(
+    fontFamily = customFontFamily,
+    fontWeight = FontWeight.Normal,
+    fontSize = 25.sp
+)
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -315,7 +341,27 @@ fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
         LoadingScreen("Loading, please wait...")
     } else {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Workplace Tracker") }) },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Workplace Tracker",
+                                style = customTextStyle,
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFF5263b7) // Set the background color here
+                    )
+                )
+            },
             floatingActionButton = {
                 if (currentScreen.value == "Home") {
                     FloatingActionButton(onClick = { /* Implement action */ }) {
@@ -327,19 +373,30 @@ fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
                 BottomNavigationBar(currentScreen.value) { screen ->
                     currentScreen.value = screen
                 }
+
             }
         ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                when (currentScreen.value) {
-                    "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
-                    "Profile" -> UserProfileScreen(mainViewModel) // Placeholder, implement your logic here
-                    "Gps" -> GpsScreen() // Placeholder, implement your logic here
-                    // Add other cases as needed
+                    Box(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .background(LightBlue)
+                    ) {
+                        when (currentScreen.value) {
+                            "Home" -> HomeScreen(
+                                mainViewModel = mainViewModel,
+                                timerViewModel = timerViewModel
+                            )
+
+                            "Profile" -> UserProfileScreen(mainViewModel)
+                            "Gps" -> GpsScreen()
+                            // Add other cases as needed
+                        }
+                    }
                 }
+
             }
         }
-    }
-}
+
 
 
 
@@ -348,11 +405,11 @@ fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
     val userInfo by mainViewModel.userInfo.observeAsState()
     val userId by mainViewModel.userId.observeAsState()
 
-    // Track if the initial data fetch has been completed.
+// Track if the initial data fetch has been completed.
     val dataFetchCompleted = remember { mutableStateOf(false) }
     val showDialog = remember { mutableStateOf(false) }
 
-    // Adjust LaunchedEffect to set dataFetchCompleted to true once userInfo is observed.
+// Adjust LaunchedEffect to set dataFetchCompleted to true once userInfo is observed.
     LaunchedEffect(key1 = userInfo) {
         dataFetchCompleted.value = true
         showDialog.value = userInfo == null
@@ -378,8 +435,11 @@ fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
 
                 WorkedHoursDisplay(mainViewModel, userInfo!!.id)
             }
-        else if (showDialog.value) {
-                // Conditionally display the UserInfoDialog based on showDialog state.
+
+
+            else if (showDialog.value) {
+// Conditionally display the UserInfoDialog based on showDialog state.
+
                 UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
             }
 
@@ -419,12 +479,13 @@ fun WorkedHoursDisplay(mainViewModel: MainViewModel, userId: Int) {
         .fillMaxWidth() // Fill the width of its parent
         // Use weight to make it fill the remaining space
         .fillMaxHeight()
-        .padding(16.dp)) {
+        ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Tehdyt tunnit", fontSize = 20.sp)
+            Text("Tehdyt tunnit", fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                color = Color.White)
             // Implementation for displaying work entries
             WorkEntriesDisplay(mainViewModel = mainViewModel, userId = userId)
         }
@@ -437,26 +498,38 @@ fun TimerScreen(timerViewModel: TimerViewModel = viewModel()) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .fillMaxWidth() // Use fillMaxWidth instead of fillMaxSize
-            .padding(vertical = 16.dp) // Add vertical padding if needed
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
     ) {
-        Text(
-            text = time,
-            style = MaterialTheme.typography.headlineMedium,
+        // Specify a fixed size for the Surface to ensure it remains circular
+        Surface(
             modifier = Modifier
-                .padding(16.dp)
-                .clickable { timerViewModel.toggleTimer() }
-        )
+                .size(230.dp) // This makes the Surface have a fixed size
+                .padding(15.dp), // Adjust the outer padding if needed
+            shape = CircleShape, // Keeps the frame circular
+            border = BorderStroke(6.dp, color = Color.LightGray),
+            color = Color.Transparent
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = time,
+                    style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+                    // No need for padding here since we want the text to be centered
+                    // within the Surface, which already has a fixed size
+                    modifier = Modifier.clickable { timerViewModel.toggleTimer() },
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        // Button below the time text
         Button(
             onClick = { timerViewModel.resetTimer() },
-            // Consider removing or adjusting the bottom padding if it's too large
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(top = 2.dp)
         ) {
             Text("Reset")
         }
     }
 }
-
 
 @Composable
 fun SettingsDialog(showDialog: MutableState<Boolean>, onDismiss: () -> Unit) {
@@ -604,15 +677,15 @@ fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
             .fillMaxWidth()
             .fillMaxHeight()
             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .background(color = LightBlue),
+            .background(color = Color.White),
         contentAlignment = Alignment.Center // Center the content vertically
     ) {
         if (workEntries.isEmpty()) {
             // If no work entries available, display a message
             Text(
                 text = "No work entries available for this week yet.",
-                fontSize = 20.sp,
-                modifier = Modifier.padding(16.dp)
+                fontSize = 16.sp,
+                modifier = Modifier.padding(10.dp)
             )
         } else {
             // If work entries available, display the list of entries
@@ -630,8 +703,8 @@ fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
     NavigationBar {
         val items = listOf(
             NavigationItem("Home", Icons.Filled.Home),
-            NavigationItem("Profile", Icons.Filled.AccountCircle), // Assuming you have an appropriate icon
-            NavigationItem("Gps", Icons.Filled.LocationOn)
+            NavigationItem("Gps", Icons.Filled.LocationOn),
+            NavigationItem("Profile", Icons.Filled.AccountCircle)
         )
         items.forEach { item ->
             NavigationBarItem(
