@@ -79,6 +79,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.emill.workplacetracking.db.AppDatabase
@@ -91,6 +92,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
+import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -189,13 +191,13 @@ class MainActivity : ComponentActivity() {
             val timerViewModel: TimerViewModel = viewModel(factory = timerViewModelFactory)
 
             //---- Add test data to the database ---//
-
-                  /*  val testUserId = 1
+            /*
+                    val testUserId = 1
 
                  lifecycleScope.launch {
                         TestDataGenerator.addTestData(this,workEntryDao, testUserId)
                     }
-                    */
+            */
 
             WorkPlaceTrackingTheme {
                 // Here we pass the method as a lambda function
@@ -632,8 +634,7 @@ fun TimerNotificationObserver(
 
 @Composable
 fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
-    // Assuming getWorkEntriesForCurrentWeek returns LiveData or State<List<WorkEntry>>
-    val workEntries by mainViewModel.getWorkEntriesForCurrentWeek(userId).observeAsState(initial = emptyList())
+    val workEntries by mainViewModel.getAggregatedWorkEntriesForUser(userId).observeAsState(initial = emptyList())
 
     Box(
         modifier = Modifier
@@ -641,20 +642,19 @@ fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
             .fillMaxHeight()
             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
             .background(color = LightBlue),
-        contentAlignment = Alignment.Center // Center the content vertically
+        contentAlignment = Alignment.Center
     ) {
         if (workEntries.isEmpty()) {
-            // If no work entries available, display a message
             Text(
                 text = "No work entries available for this week yet.",
                 fontSize = 20.sp,
                 modifier = Modifier.padding(16.dp)
             )
         } else {
-            // If work entries available, display the list of entries
             LazyColumn(modifier = Modifier.padding(16.dp)) {
                 items(workEntries) { entry ->
-                    Text(text = "${entry.date} - ${entry.hoursWorked}h", fontSize = 20.sp)
+                    val displayDate = formatDate(entry.date) // Use formatDate to transform date string for display
+                    Text(text = "$displayDate - ${entry.totalHoursWorked}h", fontSize = 20.sp)
                     Spacer(modifier = Modifier.height(10.dp))
                 }
             }
@@ -903,4 +903,10 @@ fun GpsScreen(context: Context = LocalContext.current) {
     Log.d("Gps Screen","Gps Screen triggered")
     // Call OsmMapViewWithLocationAndArea to display the map with user location and workplace area
     OsmMapViewWithLocationAndAreaWithButton(context, workplaceGeoPoint, workplaceRadius)
+}
+fun formatDate(dateStr: String): String {
+    val inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.getDefault())
+    val outputFormatter = DateTimeFormatter.ofPattern("EEEE, dd/MM", Locale.getDefault())
+    val date = LocalDate.parse(dateStr, inputFormatter)
+    return date.format(outputFormatter)
 }

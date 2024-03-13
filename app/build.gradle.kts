@@ -10,6 +10,7 @@ android {
     namespace = "com.emill.workplacetracking"
     compileSdk = 34
 
+
     defaultConfig {
         applicationId = "com.emill.workplacetracking"
         minSdk = 26

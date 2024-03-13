@@ -1,7 +1,5 @@
 package com.emill.workplacetracking.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.emill.workplacetracking.db.UserInfo
 import kotlinx.coroutines.launch
@@ -9,13 +7,15 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.liveData
-import com.emill.workplacetracking.db.DatabaseBuilder
+import com.emill.workplacetracking.db.AggregatedWorkEntry
 import com.emill.workplacetracking.db.UserInfoDao
 import com.emill.workplacetracking.db.WorkEntry
 import com.emill.workplacetracking.db.WorkEntryDao
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import java.util.Locale
 
 
 class MainViewModel(
@@ -73,6 +73,29 @@ class MainViewModel(
         val totalHours = allEntries.sumOf { it.hoursWorked }
         emit(totalHours)
     }
+    fun getAggregatedWorkEntriesForUser(userId: Int): LiveData<List<AggregatedWorkEntry>> = liveData {
+        val allEntries = workEntryDao.getWorkEntriesForUser(userId)
+        val now = LocalDate.now()
+        val startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val endOfWeek = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+
+        val currentWeekEntries = allEntries.filter {
+            val entryDate = LocalDate.parse(it.date) // Assumes ISO format: yyyy-MM-dd
+            !entryDate.isBefore(startOfWeek) && !entryDate.isAfter(endOfWeek)
+        }
+
+        val aggregatedEntries = currentWeekEntries.groupBy { it.date }
+            .map { (date, entries) ->
+                AggregatedWorkEntry(
+                    date = date,
+                    totalHoursWorked = entries.sumOf { it.hoursWorked }
+                )
+            }.sortedBy { LocalDate.parse(it.date) } // Sort by date in ascending order
+
+        emit(aggregatedEntries)
+    }
+
+
 
 
 }
