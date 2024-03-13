@@ -8,9 +8,11 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -85,7 +87,9 @@ import com.emill.workplacetracking.db.UserInfo
 import com.emill.workplacetracking.db.WorkEntry
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.viewmodel.MainViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
@@ -106,49 +110,48 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     companion object {
         private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
+        private const val locationPermissionRequestCode = 1000
+        private const val backgroundLocationRequestCode = 1002 // Define this
     }
-
     private lateinit var gpsManager: GPSManager
-    private val locationPermissionRequestCode = 1000
+    private val timerViewModel : TimerViewModel by viewModels()
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
                 // Use your location here
-                // Example: Check if within workplace
                 val workplaceLocation = Location("").apply {
-                    latitude = 60.224159 // Workplace latitude change to your workplace latitude
-                        longitude = 24.756550 // Workplace longitude change to your workplace longitude
+                    latitude = 60.158215 // Workplace latitude
+                    longitude = 24.879721 // Workplace longitude
                 }
-                val isWithinWorkplace = gpsManager.isWithinWorkplace(location, workplaceLocation, 100f) // Radius in meters
+                val distanceToWorkplace = location.distanceTo(workplaceLocation)
 
-                if (isWithinWorkplace) {
-                    showNotification("Welcome to Work. Don't forget to clock in!")
-                    // log event for applications database for record keeping or future reference?
-                    // updateWorkStatusUI(true) UI changes when in work?
-                    // Handle user being within workplace
+                if (distanceToWorkplace <= 20f) { // User is within the workplace area
+                    if (!timerViewModel.isTimerRunning()) {
+                        timerViewModel.startTimer()
+                        Log.d("LocationUpdates", "Timer started - within workplace area")
+                    }
+                } else { // User has left the workplace area
+                    if (timerViewModel.isTimerRunning()) {
+                        timerViewModel.stopTimerAndSaveEntry(1)
+                        Log.d("LocationUpdates", "Timer stopped - outside workplace area")
+                    }
                 }
             }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
-        // Set user agent to avoid getting blocked by the OSM servers
-        val userAgentValue: String = "com.emill.workplacetracking"
-        Configuration.getInstance().userAgentValue = userAgentValue
         super.onCreate(savedInstanceState)
 
+        Configuration.getInstance().userAgentValue = "com.emill.workplacetracking"
+
         gpsManager = GPSManager(this)
+
+        // Requesting location permissions
+        checkAndRequestLocationPermissions()
         // Don't forget to request permissions before starting location updates
         // Check for location permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Permission is not granted, request it
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionRequestCode)
-        } else {
-            // Permission is granted, you can start location updates
-            startLocationTracking()
-        }
 
         // Initialize your database and DAO here
         val appDatabase: AppDatabase = Room.databaseBuilder(
@@ -204,6 +207,30 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    private fun checkAndRequestLocationPermissions() {
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED -> {
+                // Foreground location permission has not been granted yet, request it
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    locationPermissionRequestCode)
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED -> {
+                // On Android 10 and above, request background location permission separately
+                // This request must come AFTER foreground permission has been granted
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                    backgroundLocationRequestCode)
+            }
+            else -> {
+                // All necessary permissions have been granted, start location tracking
+                startLocationTracking()
+            }
+        }
+    }
 
 
     private fun startLocationTracking() {
@@ -225,13 +252,22 @@ class MainActivity : ComponentActivity() {
         // Override onRequestPermissionsResult to handle permission request responses
         override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            if (requestCode == REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION) {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission was granted
-                    // You can now proceed with showing notifications or any other logic that requires this permission
-                } else {
-                    // Permission was denied
-                    // Handle the denial accordingly, possibly by informing the user of the functionality they're missing out on
+            when (requestCode) {
+                locationPermissionRequestCode -> {
+                    if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        // Foreground location permission granted, now check/request background location permission
+                        checkAndRequestLocationPermissions()
+                    } else {
+                        // Handle the case where the user denies the foreground location permission
+                    }
+                }
+                backgroundLocationRequestCode -> {
+                    if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        // Background location permission granted
+                        startLocationTracking()
+                    } else {
+                        // Handle the case where the user denies the background location permission
+                    }
                 }
             }
         }
@@ -802,8 +838,8 @@ fun TotalHoursRecordedCard(totalHours: Int, hourlyRate: Double) {
 }
 
 
-val workplaceGeoPoint = GeoPoint(60.223737, 24.758079) // Convert workplace location to GeoPoint
-const val workplaceRadius = 200.0 // meters
+val workplaceGeoPoint = GeoPoint(60.158215, 24.879721) // Convert workplace location to GeoPoint
+const val workplaceRadius = 20.0 // meters
 @Composable
 fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation: GeoPoint, workplaceRadius: Double) {
     Log.d("Map", "Map Composable triggered")
@@ -820,7 +856,7 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation:
                 mapView.apply {
                     isHorizontalMapRepetitionEnabled = false
                     isVerticalMapRepetitionEnabled = false
-                    minZoomLevel = 2.0
+                    minZoomLevel = 3.5
 
                     setTileSource(TileSourceFactory.MAPNIK)
                     controller.setCenter(workplaceLocation)
@@ -840,22 +876,12 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation:
                         fillColor = 0x25FF0000 // Example semi-transparent fill
                     })
 
-                    // Setup for user location marker (similar appearance to workplace marker)
-                    userLocationMarker.apply {
-                        position = GeoPoint(0.0,0.0) // Placeholder, will update on location change
-                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                        //icon = ContextCompat.getDrawable(context, R.drawable.your_marker_icon)
-                        title = "My Location" // Set title for user's location marker
-                    }
-                    overlays.add(userLocationMarker)
-
                     // Overlay for user's location
                     val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), this).apply {
                         enableMyLocation()
                     }
                     overlays.add(myLocationOverlay)
                     // Example to update user location marker based on location updates
-
 
                 }
             }

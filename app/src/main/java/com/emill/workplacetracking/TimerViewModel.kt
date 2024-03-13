@@ -30,6 +30,10 @@ class TimerViewModel(
     private var seconds = 0
     private var isRunning = false
 
+    // Public method to check if the timer is running
+    fun isTimerRunning(): Boolean {
+        return isRunning
+    }
 
     fun toggleTimer() {
         if (isRunning) {
@@ -39,9 +43,9 @@ class TimerViewModel(
         }
     }
 
-    private fun startTimer() {
+    fun startTimer() {
         isRunning = true
-        _timerNotifications.value = "Timer Started"
+        _timerNotifications.value = "You have entered the workplace. Timer started."
         job = scope.launch {
             while (isActive) {
                 _time.value = formatTime(seconds)
@@ -54,7 +58,6 @@ class TimerViewModel(
     fun stopTimer() {
         isRunning = false
         job?.cancel()
-        _timerNotifications.value = "Timer Stopped"
     }
     fun stopTimerAndSaveEntry(userId: Int) {
         if (isRunning) {
@@ -64,6 +67,8 @@ class TimerViewModel(
             viewModelScope.launch {
                 WorkEntryDao.insert(workEntry)
                 stopTimer() // Resets the timer
+                _timerNotifications.value = "You have exited the workplace. Your work hours have been saved."
+                resetTimer()
             }
         }
     }
