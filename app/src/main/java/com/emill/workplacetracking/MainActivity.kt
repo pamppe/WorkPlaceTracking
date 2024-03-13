@@ -12,6 +12,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -113,24 +114,28 @@ class MainActivity : ComponentActivity() {
         private const val backgroundLocationRequestCode = 1002 // Define this
     }
     private lateinit var gpsManager: GPSManager
-    private val locationPermissionRequestCode = 1000
+    private val timerViewModel : TimerViewModel by viewModels()
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
                 // Use your location here
-                // Example: Check if within workplace
                 val workplaceLocation = Location("").apply {
-                    latitude = 60.224159 // Workplace latitude change to your workplace latitude
-                        longitude = 24.756550 // Workplace longitude change to your workplace longitude
+                    latitude = 60.158215 // Workplace latitude
+                    longitude = 24.879721 // Workplace longitude
                 }
-                val isWithinWorkplace = gpsManager.isWithinWorkplace(location, workplaceLocation, 100f) // Radius in meters
+                val distanceToWorkplace = location.distanceTo(workplaceLocation)
 
-                if (isWithinWorkplace) {
-                    showNotification("Welcome to Work. Don't forget to clock in!")
-                    // log event for applications database for record keeping or future reference?
-                    // updateWorkStatusUI(true) UI changes when in work?
-                    // Handle user being within workplace
+                if (distanceToWorkplace <= 20f) { // User is within the workplace area
+                    if (!timerViewModel.isTimerRunning()) {
+                        timerViewModel.startTimer()
+                        Log.d("LocationUpdates", "Timer started - within workplace area")
+                    }
+                } else { // User has left the workplace area
+                    if (timerViewModel.isTimerRunning()) {
+                        timerViewModel.stopTimerAndSaveEntry(1)
+                        Log.d("LocationUpdates", "Timer stopped - outside workplace area")
+                    }
                 }
             }
         }
@@ -833,8 +838,8 @@ fun TotalHoursRecordedCard(totalHours: Int, hourlyRate: Double) {
 }
 
 
-val workplaceGeoPoint = GeoPoint(60.223737, 24.758079) // Convert workplace location to GeoPoint
-const val workplaceRadius = 200.0 // meters
+val workplaceGeoPoint = GeoPoint(60.158215, 24.879721) // Convert workplace location to GeoPoint
+const val workplaceRadius = 20.0 // meters
 @Composable
 fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation: GeoPoint, workplaceRadius: Double) {
     Log.d("Map", "Map Composable triggered")
@@ -878,7 +883,6 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation:
                     overlays.add(myLocationOverlay)
                     // Example to update user location marker based on location updates
 
-
                 }
             }
         )
@@ -899,41 +903,4 @@ fun GpsScreen(context: Context = LocalContext.current) {
     Log.d("Gps Screen","Gps Screen triggered")
     // Call OsmMapViewWithLocationAndArea to display the map with user location and workplace area
     OsmMapViewWithLocationAndAreaWithButton(context, workplaceGeoPoint, workplaceRadius)
-}
-fun setupLocationUpdates(
-    context: Context,
-    locationClient: FusedLocationProviderClient,
-    workplaceLocation: GeoPoint,
-    workplaceRadius: Double,
-    timerViewModel: TimerViewModel
-) {
-    val locationRequest = LocationRequest.create().apply {
-        interval = 10000 // Desired update interval in milliseconds
-        fastestInterval = 5000 // Fastest interval app can handle updates
-        priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-    }
-
-    val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            super.onLocationResult(locationResult) // Call the superclass method
-            for (location in locationResult.locations) {
-                // Process the incoming location update
-                val userLocation = GeoPoint(location.latitude, location.longitude)
-                val distance = userLocation.distanceToAsDouble(workplaceLocation)
-
-                if (distance <= workplaceRadius && !timerViewModel.isTimerRunning()) {
-                    timerViewModel.startTimer()
-                } else if (distance > workplaceRadius && timerViewModel.isTimerRunning()) {
-                    timerViewModel.stopTimerAndSaveEntry(1)
-                }
-            }
-        }
-    }
-
-    // Don't forget to request permissions before calling this
-    locationClient.requestLocationUpdates(
-        locationRequest,
-        locationCallback,
-        Looper.getMainLooper()
-    )
 }
