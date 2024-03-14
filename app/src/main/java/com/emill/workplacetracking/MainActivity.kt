@@ -16,11 +16,14 @@ import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,9 +31,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -52,9 +58,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -69,8 +77,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -251,28 +263,28 @@ class MainActivity : ComponentActivity() {
     }
 
 
-        // Override onRequestPermissionsResult to handle permission request responses
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            when (requestCode) {
-                locationPermissionRequestCode -> {
-                    if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        // Foreground location permission granted, now check/request background location permission
-                        checkAndRequestLocationPermissions()
-                    } else {
-                        // Handle the case where the user denies the foreground location permission
-                    }
+    // Override onRequestPermissionsResult to handle permission request responses
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            locationPermissionRequestCode -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Foreground location permission granted, now check/request background location permission
+                    checkAndRequestLocationPermissions()
+                } else {
+                    // Handle the case where the user denies the foreground location permission
                 }
-                backgroundLocationRequestCode -> {
-                    if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        // Background location permission granted
-                        startLocationTracking()
-                    } else {
-                        // Handle the case where the user denies the background location permission
-                    }
+            }
+            backgroundLocationRequestCode -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Background location permission granted
+                    startLocationTracking()
+                } else {
+                    // Handle the case where the user denies the background location permission
                 }
             }
         }
+    }
 
     private fun createNotificationChannel() {
         val name = getString(R.string.channel_name) // Define this in your strings.xml
@@ -331,6 +343,13 @@ fun GreetingPreview() {
     }
 }
 val LightBlue = Color(0xFF5263b7)
+val customFontFamily = FontFamily(Font(R.font.koulenregular))
+
+val customTextStyle = TextStyle(
+    fontFamily = customFontFamily,
+    fontWeight = FontWeight.Normal,
+    fontSize = 25.sp
+)
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -353,29 +372,46 @@ fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
         LoadingScreen("Loading, please wait...")
     } else {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Workplace Tracker") }) },
-            floatingActionButton = {
-                if (currentScreen.value == "Home") {
-                    FloatingActionButton(onClick = { /* Implement action */ }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+            topBar = { TopAppBar(
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Workplace Tracker",
+                            style = customTextStyle,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF5263b7) // Set the background color here
+                )
+            )
             },
             bottomBar = {
                 BottomNavigationBar(currentScreen.value) { screen ->
                     currentScreen.value = screen
                 }
-            }
-        ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                when (currentScreen.value) {
-                    "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
-                    "Profile" -> UserProfileScreen(mainViewModel) // Placeholder, implement your logic here
-                    "Gps" -> GpsScreen() // Placeholder, implement your logic here
-                    // Add other cases as needed
+            },
+            containerColor = MaterialTheme.colorScheme.background,
+            content = { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .background(LightBlue)
+                ) {
+                    when (currentScreen.value) {
+                        "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
+                        "Profile" -> UserProfileScreen(mainViewModel)
+                        "Gps" -> GpsScreen()
+                    }
                 }
             }
-        }
+        )
     }
 }
 
@@ -416,7 +452,7 @@ fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
 
                 WorkedHoursDisplay(mainViewModel, userInfo!!.id)
             }
-        else if (showDialog.value) {
+            else if (showDialog.value) {
                 // Conditionally display the UserInfoDialog based on showDialog state.
                 UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
             }
@@ -457,12 +493,13 @@ fun WorkedHoursDisplay(mainViewModel: MainViewModel, userId: Int) {
         .fillMaxWidth() // Fill the width of its parent
         // Use weight to make it fill the remaining space
         .fillMaxHeight()
-        .padding(16.dp)) {
+        ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Tehdyt tunnit", fontSize = 20.sp)
+            Text("Tehdyt tunnit", fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                color = Color.White)
             // Implementation for displaying work entries
             WorkEntriesDisplay(mainViewModel = mainViewModel, userId = userId)
         }
@@ -475,77 +512,35 @@ fun TimerScreen(timerViewModel: TimerViewModel = viewModel()) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .fillMaxWidth() // Use fillMaxWidth instead of fillMaxSize
-            .padding(vertical = 16.dp) // Add vertical padding if needed
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
     ) {
-        Text(
-            text = time,
-            style = MaterialTheme.typography.headlineMedium,
+        // Specify a fixed size for the Surface to ensure it remains circular
+        Surface(
             modifier = Modifier
-                .padding(16.dp)
-                .clickable { timerViewModel.toggleTimer() }
-        )
-        Button(
-            onClick = { timerViewModel.resetTimer() },
-            // Consider removing or adjusting the bottom padding if it's too large
-            modifier = Modifier.padding(bottom = 16.dp)
+                .size(230.dp) // This makes the Surface have a fixed size
+                .padding(15.dp), // Adjust the outer padding if needed
+            shape = CircleShape, // Keeps the frame circular
+            border = BorderStroke(6.dp, color = Color.LightGray),
+            color = Color.Transparent
         ) {
-            Text("Reset")
-        }
-    }
-}
-
-
-@Composable
-fun SettingsDialog(showDialog: MutableState<Boolean>, onDismiss: () -> Unit) {
-    // Assuming you store these settings in a ViewModel or similar
-    val isGPSTrackingEnabled = remember { mutableStateOf(false) }
-    val isNotificationAlertsEnabled = remember { mutableStateOf(false) }
-
-    if (showDialog.value) {
-        AlertDialog(
-            onDismissRequest = {
-                // Handle dismiss actions like closing the dialog or updating state
-                onDismiss()
-            },
-            title = { Text("Settings") },
-            text = {
-                Column {
-                    SwitchRow(switchText = "GPS Tracking", isChecked = isGPSTrackingEnabled)
-                    SwitchRow(switchText = "Notification Alerts", isChecked = isNotificationAlertsEnabled)
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Save the settings and dismiss the dialog
-                        // For example, update your ViewModel or shared preferences
-                        showDialog.value = false
-                        onDismiss()
-                    }
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showDialog.value = false }) {
-                    Text("Cancel")
-                }
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = time,
+                    style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+                    // No need for padding here since we want the text to be centered
+                    // within the Surface, which already has a fixed size
+                    modifier = Modifier.clickable { timerViewModel.toggleTimer() },
+                    textAlign = TextAlign.Center
+                )
             }
-        )
+        }
+
     }
 }
 
-@Composable
-fun SwitchRow(switchText: String, isChecked: MutableState<Boolean>) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(switchText)
-        Switch(
-            checked = isChecked.value,
-            onCheckedChange = { isChecked.value = it }
-        )
-    }
-}
+
+
 @Composable
 fun UserInfoDialog(showDialog: MutableState<Boolean>, viewModel: MainViewModel) {
     val nameState = remember { mutableStateOf("") }
@@ -638,10 +633,9 @@ fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
+            .fillMaxSize()
             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .background(color = LightBlue),
+            .background(color = Color.White),
         contentAlignment = Alignment.Center
     ) {
         if (workEntries.isEmpty()) {
@@ -651,16 +645,48 @@ fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
                 modifier = Modifier.padding(16.dp)
             )
         } else {
-            LazyColumn(modifier = Modifier.padding(16.dp)) {
-                items(workEntries) { entry ->
-                    val displayDate = formatDate(entry.date) // Use formatDate to transform date string for display
-                    Text(text = "$displayDate - ${entry.totalHoursWorked}h", fontSize = 20.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(Alignment.CenterVertically) // Center vertically within the Box
+                    .padding(horizontal = 16.dp), // Adjust padding to ensure content is centered
+                horizontalAlignment = Alignment.CenterHorizontally // Center items horizontally
+            ) {
+                workEntries.forEach { entry ->
+                    val formattedDate = formatDate(entry.date)
+                    val (weekday, date) = formattedDate.split(", ").let { it[0] to it[1] }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(), // Fill the width and center content
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            color = Color.Black,
+                            text = weekday,
+                            fontSize = 18.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            color = Color.Black,
+                            text = date,
+                            fontSize = 18.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            color = Color.Black,
+                            text = "${entry.totalHoursWorked}h",
+                            fontSize = 18.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
     }
 }
+
 @Composable
 fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
     NavigationBar {
@@ -671,10 +697,12 @@ fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
         )
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(item.title) },
+                icon = { Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(18.dp)) }, // Smaller icons
+                label = { Text(item.title, fontSize = 10.sp) }, // Smaller text
                 selected = currentRoute == item.title,
-                onClick = { onNavigate(item.title) }
+                onClick = { onNavigate(item.title) },
+                // Apply padding inside NavigationBarItem for further size adjustments
+                modifier = Modifier.padding(vertical = 1.dp) // Reduce padding to make items appear smaller
             )
         }
     }
@@ -867,7 +895,7 @@ fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation:
                         position = workplaceLocation
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         title = "Workplace"
-                       // icon = context.getDrawable(R.drawable.ic_workplace_marker) // Custom icon for workplace
+                        // icon = context.getDrawable(R.drawable.ic_workplace_marker) // Custom icon for workplace
                     })
 
                     // Add polygon for workplace radius
