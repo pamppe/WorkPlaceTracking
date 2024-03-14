@@ -662,22 +662,25 @@ fun WorkEntriesDisplay(mainViewModel: MainViewModel, userId: Int) {
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
+                            color = Color.Black,
                             text = weekday,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
+                            color = Color.Black,
                             text = date,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
+                            color = Color.Black,
                             text = "${entry.totalHoursWorked}h",
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    Spacer(modifier = Modifier.height(15.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
@@ -694,10 +697,12 @@ fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
         )
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(item.title) },
+                icon = { Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(18.dp)) }, // Smaller icons
+                label = { Text(item.title, fontSize = 10.sp) }, // Smaller text
                 selected = currentRoute == item.title,
-                onClick = { onNavigate(item.title) }
+                onClick = { onNavigate(item.title) },
+                // Apply padding inside NavigationBarItem for further size adjustments
+                modifier = Modifier.padding(vertical = 1.dp) // Reduce padding to make items appear smaller
             )
         }
     }
