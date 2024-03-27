@@ -78,6 +78,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+    //Accompanist (Permission)
+    implementation ("com.google.accompanist:accompanist-permissions:0.31.3-beta")
+
     // ViewModel and LiveData
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")

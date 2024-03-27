@@ -120,7 +120,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.WeekFields
 import java.util.Locale
 
-
 class MainActivity : ComponentActivity() {
     companion object {
         private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
@@ -135,8 +134,13 @@ class MainActivity : ComponentActivity() {
             locationResult.lastLocation?.let { location ->
                 // Use your location here
                 val workplaceLocation = Location("").apply {
-                    latitude = 60.158215 // Workplace latitude
-                    longitude = 24.879721 // Workplace longitude
+                    //Emil
+                    /*latitude = 60.158215 // Workplace latitude
+                    longitude = 24.879721 // Workplace longitude*/
+
+                    //Leo
+                    latitude = 60.218757 // Workplace latitude
+                    longitude = 24.747449 // Workplace longitude
                 }
                 val distanceToWorkplace = location.distanceTo(workplaceLocation)
 
@@ -154,7 +158,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -866,8 +869,10 @@ fun TotalHoursRecordedCard(totalHours: Int, hourlyRate: Double) {
 }
 
 
-val workplaceGeoPoint = GeoPoint(60.158215, 24.879721) // Convert workplace location to GeoPoint
-const val workplaceRadius = 20.0 // meters
+//val workplaceGeoPoint = GeoPoint(60.158215, 24.879721) // Convert workplace location to GeoPoint (Emil)
+val workplaceGeoPoint = GeoPoint(60.218757, 24.747449) // (Leo)
+
+const val workplaceRadius = 10.0 // meters
 @Composable
 fun OsmMapViewWithLocationAndAreaWithButton(context: Context, workplaceLocation: GeoPoint, workplaceRadius: Double) {
     Log.d("Map", "Map Composable triggered")
