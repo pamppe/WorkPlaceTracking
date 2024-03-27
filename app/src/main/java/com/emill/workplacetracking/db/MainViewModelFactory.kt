@@ -1,10 +1,8 @@
 package com.emill.workplacetracking.db
 
-import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.emill.workplacetracking.db.UserInfoDao
-import com.emill.workplacetracking.viewmodel.MainViewModel
+import com.emill.workplacetracking.viewmodels.MainViewModel
 
 
 class MainViewModelFactory(

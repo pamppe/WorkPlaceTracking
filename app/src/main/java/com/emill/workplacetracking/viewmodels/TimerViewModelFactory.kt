@@ -1,4 +1,4 @@
-package com.emill.workplacetracking
+package com.emill.workplacetracking.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
