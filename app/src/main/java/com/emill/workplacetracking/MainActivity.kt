@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
@@ -12,6 +13,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.core.app.ActivityCompat
@@ -25,6 +27,7 @@ import com.emill.workplacetracking.db.MainViewModelFactory
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.uiViews.MyApp
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
+import com.emill.workplacetracking.utils.ForegroundService
 import com.emill.workplacetracking.utils.GPSManager
 import com.emill.workplacetracking.viewmodels.MainViewModel
 import com.emill.workplacetracking.viewmodels.TimerViewModel
@@ -39,6 +42,8 @@ class MainActivity : ComponentActivity() {
         private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
         private const val locationPermissionRequestCode = 1000
         private const val backgroundLocationRequestCode = 1002 // Define this
+        private const val REQUEST_CODE_ALL_PERMISSIONS = 1003
+
     }
 
     private lateinit var gpsManager: GPSManager
@@ -49,8 +54,12 @@ class MainActivity : ComponentActivity() {
             locationResult.lastLocation?.let { location ->
                 // Use your location here
                 val workplaceLocation = Location("").apply {
-                    latitude = 60.158215 // Workplace latitude
-                    longitude = 24.879721 // Workplace longitude
+                    //Emil
+                    /*latitude = 60.158215 // Workplace latitude
+                    longitude = 24.879721 // Workplace longitude*/
+                    //Leo
+                    latitude = 60.168516 // Workplace latitude
+                    longitude = 24.732889 // Workplace longitude
                 }
                 val distanceToWorkplace = location.distanceTo(workplaceLocation)
 
@@ -69,6 +78,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -77,7 +87,8 @@ class MainActivity : ComponentActivity() {
         gpsManager = GPSManager(this)
 
         // Requesting location permissions
-        checkAndRequestLocationPermissions()
+        //checkAndRequestLocationPermissions()
+        //checkAndRequestAllPermissions()
         // Don't forget to request permissions before starting location updates
         // Check for location permissions
 
@@ -89,9 +100,20 @@ class MainActivity : ComponentActivity() {
 
         val userInfoDao = appDatabase.userInfoDao()
         val workEntryDao = appDatabase.workEntryDao()
-        // Initialize your ViewModel factories
+
+        // Initialize ViewModel factories
         val mainViewModelFactory = MainViewModelFactory(userInfoDao, workEntryDao)
         val timerViewModelFactory = TimerViewModelFactory(workEntryDao)
+
+        //create notification channel for foreground
+        val channel = NotificationChannel(
+            "foreground_channel",
+            "Foreground Notification",
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
 
         // Create the notification channel
         createNotificationChannel()
@@ -135,41 +157,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    private fun checkAndRequestLocationPermissions() {
-        when {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
-                    PackageManager.PERMISSION_GRANTED -> {
-                // Foreground location permission has not been granted yet, request it
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    locationPermissionRequestCode
-                )
-            }
-
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    ) !=
-                    PackageManager.PERMISSION_GRANTED -> {
-                // On Android 10 and above, request background location permission separately
-                // This request must come AFTER foreground permission has been granted
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                    backgroundLocationRequestCode
-                )
-            }
-
-            else -> {
-                // All necessary permissions have been granted, start location tracking
-                startLocationTracking()
-            }
+    private fun startForegroundService() {
+        val intent = Intent(this, ForegroundService::class.java).apply {
+            action = ForegroundService.Actions.START.toString()
         }
+        startForegroundService(intent)
     }
-
     private fun startLocationTracking() {
         // Implement your logic to start location updates using GPSManager
         gpsManager.startLocationUpdates(locationCallback)
@@ -186,33 +179,90 @@ class MainActivity : ComponentActivity() {
         gpsManager.stopLocationUpdates(locationCallback)
     }
 
+    /*@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun checkAndRequestAllPermissions() {
+        val permissions = arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+
+        val permissionsToRequest = mutableListOf<String>()
+        for (permission in permissions) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(permission)
+            }
+        }
+        Log.d("PermissionDebug", "Permissions to request: $permissionsToRequest")
+
+        if (permissionsToRequest.isNotEmpty()) {
+            Log.d("PermissionDebug", "Requesting permissions")
+
+            ActivityCompat.requestPermissions(
+                this,
+                permissionsToRequest.toTypedArray(),
+                REQUEST_CODE_ALL_PERMISSIONS
+            )
+        } else {
+            Log.d("PermissionDebug", "All permissions already granted")
+            // All necessary permissions have been granted, start location tracking
+            startLocationTracking()
+            // Start the ForegroundService
+            startForegroundService()
+        }
+    }*/
+    private val permissionsToRequest = arrayOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+        Manifest.permission.POST_NOTIFICATIONS,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE
+    )
+
+    private var permissionIndex = 0
+
+    private fun requestNextPermission() {
+        if (permissionIndex < permissionsToRequest.size) {
+            val permission = permissionsToRequest[permissionIndex]
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(permission), permissionIndex)
+            } else {
+                // Permission already granted, proceed to the next one
+                permissionIndex++
+                requestNextPermission()
+            }
+        } else {
+            // All permissions requested
+            // Proceed with your app logic here
+            startLocationTracking()
+            startForegroundService()
+        }
+    }
+
+
     // Override onRequestPermissionsResult to handle permission request responses
+    @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            locationPermissionRequestCode -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Foreground location permission granted, now check/request background location permission
-                    checkAndRequestLocationPermissions()
-                } else {
-                    // Handle the case where the user denies the foreground location permission
-                }
-            }
-
-            backgroundLocationRequestCode -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Background location permission granted
-                    startLocationTracking()
-                } else {
-                    // Handle the case where the user denies the background location permission
-                }
+        Log.d("PermissionDebug", "Received permission result: $requestCode")
+        if (requestCode == permissionIndex) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, proceed to the next one
+                // All requested permissions granted
+                Log.d("PermissionDebug", "permission granted")
+                permissionIndex++
+                requestNextPermission()
+            } else {
+                // Permission denied, handle it appropriately
+                Log.d("PermissionDebug", "One or more permissions denied")
             }
         }
     }
+
 
     private fun createNotificationChannel() {
         val name = getString(R.string.channel_name) // Define this in your strings.xml
