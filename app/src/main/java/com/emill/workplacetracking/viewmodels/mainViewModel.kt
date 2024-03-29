@@ -1,4 +1,4 @@
-package com.emill.workplacetracking.viewmodel
+package com.emill.workplacetracking.viewmodels
 
 import androidx.lifecycle.viewModelScope
 import com.emill.workplacetracking.db.UserInfo
@@ -13,9 +13,7 @@ import com.emill.workplacetracking.db.WorkEntry
 import com.emill.workplacetracking.db.WorkEntryDao
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
-import java.util.Locale
 
 
 class MainViewModel(

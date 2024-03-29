@@ -1,4 +1,4 @@
-package com.emill.workplacetracking
+package com.emill.workplacetracking.viewmodels
 
 import android.icu.text.SimpleDateFormat
 import androidx.lifecycle.ViewModel
