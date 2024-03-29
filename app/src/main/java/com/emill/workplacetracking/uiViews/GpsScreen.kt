@@ -16,6 +16,6 @@ fun GpsScreen(context: Context = LocalContext.current) {
 /*
 val workplaceGeoPoint = GeoPoint(60.158215, 24.879721) // Convert workplace location to GeoPoint (Emil)
 */
-val workplaceGeoPoint = GeoPoint(60.168516, 24.732889) // Convert workplace location to GeoPoint (Leo)
+val workplaceGeoPoint = GeoPoint(60.218764, 24.747425) // Convert workplace location to GeoPoint (Leo)
 
 const val workplaceRadius = 20.0 // meters
