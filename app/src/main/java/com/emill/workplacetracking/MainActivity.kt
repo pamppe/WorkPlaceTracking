@@ -25,6 +25,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.emill.workplacetracking.db.AppDatabase
 import com.emill.workplacetracking.db.MainViewModelFactory
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
@@ -32,6 +34,7 @@ import com.emill.workplacetracking.uiViews.MyApp
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
 import com.emill.workplacetracking.utils.ForegroundService
 import com.emill.workplacetracking.utils.GPSManager
+import com.emill.workplacetracking.utils.LocationCheckWorker
 import com.emill.workplacetracking.viewmodels.MainViewModel
 import com.emill.workplacetracking.viewmodels.TimerViewModel
 import com.emill.workplacetracking.viewmodels.TimerViewModelFactory
@@ -39,6 +42,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import org.osmdroid.config.Configuration
 import java.util.LinkedList
+import java.util.concurrent.TimeUnit
 
 
 class MainActivity : ComponentActivity() {
@@ -264,8 +268,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // Stop location updates when the activity is no longer visible
+
+        // Start the foreground service
+        val intent = Intent(this, ForegroundService::class.java).apply {
+            action = ForegroundService.Actions.START.toString()
+        }
+        startForegroundService(intent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Stop location updates when the activity is no longer active
         gpsManager.stopLocationUpdates(locationCallback)
+        // Stop the foreground service
+        val intent = Intent(this, ForegroundService::class.java).apply {
+            action = ForegroundService.Actions.STOP.toString()
+        }
+        startService(intent)
+
+        // Cancel all work for LocationCheckWorker
+        WorkManager.getInstance(this).cancelAllWorkByTag(LocationCheckWorker::class.java.name)
     }
 
     private fun createNotificationChannel() {
