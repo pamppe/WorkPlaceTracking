@@ -256,5 +256,3 @@ class MainActivity : ComponentActivity() {
 }
 
 val customFontFamily = FontFamily(Font(R.font.koulenregular))
-
-

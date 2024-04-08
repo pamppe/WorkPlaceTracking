@@ -34,7 +34,9 @@ fun RegisterScreen() {
     var name by remember {
         mutableStateOf("")
     }
-
+    var number by remember {
+        mutableStateOf("")
+    }
     var salary by remember { mutableStateOf("") }
 
     Column(
@@ -44,42 +46,56 @@ fun RegisterScreen() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+
+
+       // Text(text = "Sign up", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+
+        // Spacer(modifier = Modifier.height(4.dp))
+        // Text(text = "Please enter your details")
+
         Spacer(modifier = Modifier.height(16.dp))
+        PickImageFromGallery()
 
-        Text(text = "Sign up", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = "Please enter your details")
-
-        Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(value = name, onValueChange = {
             name = it
         }, label = {
             Text(text = "Name")
         })
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = email, onValueChange = {
             email = it
         }, label = {
             Text(text = "Email")
         })
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = number,
+            onValueChange = { text ->
+                number = text
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.NumberPassword
+            ),
+            visualTransformation = VisualTransformation.None,
+            label = { Text(text = "Phone number") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = password, onValueChange = {
             password = it
         }, label = {
             Text(text = "Password")
         })
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = password, onValueChange = {
             password = it
         }, label = {
             Text(text = "Confirm Password")
         })
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = salary,
             onValueChange = { text ->
