@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
@@ -112,6 +113,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val mainViewModel: MainViewModel = viewModel(factory = mainViewModelFactory)
+
+            // Check if user is logged in
+            if (mainViewModel.userInfo.value == null) {
+                // User is not logged in, redirect to LoginActivity
+                val intent = Intent(this, LoginActivity::class.java)
+                startActivity(intent)
+                finish() // Close MainActivity
+            }
 
             // Provide the custom factory when retrieving the TimerViewModel
             val timerViewModel: TimerViewModel = viewModel(factory = timerViewModelFactory)

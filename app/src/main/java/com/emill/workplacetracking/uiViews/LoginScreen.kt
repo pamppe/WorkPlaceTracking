@@ -24,9 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.emill.workplacetracking.R
+import com.emill.workplacetracking.viewmodels.LoginViewModel
+
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(viewModel: LoginViewModel) {
 
     var email by remember {
         mutableStateOf("")
@@ -64,6 +66,7 @@ fun LoginScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
+            viewModel.loginUser(email, password)
             Log.i("Credential", "Email : $email Password : $password")},
             modifier = Modifier
                 .width(170.dp)

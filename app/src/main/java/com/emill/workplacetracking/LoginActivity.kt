@@ -1,0 +1,27 @@
+package com.emill.workplacetracking
+
+import android.os.Bundle
+import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.material3.MaterialTheme
+import androidx.lifecycle.ViewModelProvider
+import com.emill.workplacetracking.uiViews.LoginScreen
+import com.emill.workplacetracking.viewmodels.LoginViewModel
+import com.emill.workplacetracking.viewmodels.LoginViewModelFactory
+
+class LoginActivity : AppCompatActivity() {
+    private lateinit var viewModel: LoginViewModel
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val apiService = RetrofitInstance.api
+        viewModel = ViewModelProvider(this, LoginViewModelFactory(apiService)).get(LoginViewModel::class.java)
+
+        setContent {
+            MaterialTheme {
+                LoginScreen(viewModel)
+            }
+        }
+    }
+}

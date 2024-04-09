@@ -11,6 +11,7 @@ import com.emill.workplacetracking.db.AggregatedWorkEntry
 import com.emill.workplacetracking.db.UserInfoDao
 import com.emill.workplacetracking.db.WorkEntry
 import com.emill.workplacetracking.db.WorkEntryDao
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -92,8 +93,5 @@ class MainViewModel(
 
         emit(aggregatedEntries)
     }
-
-
-
 
 }
