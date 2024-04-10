@@ -17,4 +17,14 @@ interface ApiService {
         @Field("email") email: String,
         @Field("password") password: String
     ): AuthResponse
+
+    @POST("auth/register")
+    suspend fun registerUser(
+        @Field("name") name: String,
+        @Field("email") email: String,
+        @Field("phone") phone: String,
+        @Field("picture") picture: String,
+        @Field("salary") salary: String,
+        @Field("password") password: String
+    ): AuthResponse
 }

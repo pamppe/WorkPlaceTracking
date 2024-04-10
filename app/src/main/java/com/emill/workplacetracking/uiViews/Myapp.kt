@@ -86,7 +86,7 @@ fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
                         "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
                         "Profile" -> UserProfileScreen(mainViewModel)
                         "Gps" -> GpsScreen()
-                        "Start" -> RegisterScreen()
+                        //"Start" -> RegisterScreen()
                     }
                 }
             }

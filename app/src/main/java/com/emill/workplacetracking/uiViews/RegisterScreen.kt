@@ -1,5 +1,6 @@
 package com.emill.workplacetracking.uiViews
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,14 +17,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.emill.workplacetracking.viewmodels.RegisterViewModel
 
 @Composable
-fun RegisterScreen() {
+fun RegisterScreen(viewModel: RegisterViewModel) {
 
     var email by remember {
         mutableStateOf("")
@@ -39,6 +39,10 @@ fun RegisterScreen() {
     }
     var salary by remember { mutableStateOf("") }
 
+    var picture by remember {
+        mutableStateOf("")
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -46,8 +50,6 @@ fun RegisterScreen() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-
 
        // Text(text = "Sign up", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
@@ -107,9 +109,18 @@ fun RegisterScreen() {
             visualTransformation = VisualTransformation.None,
             label = { Text(text = "Hourly salary") }
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(value = picture, onValueChange = {
+            picture = it
+        }, label = {
+            Text(text = "Picture")
+        })
 
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {}, modifier = Modifier
+        Button(onClick = {
+            viewModel.registerUser(email, password, name, number, salary, picture)
+            Log.i("Credential", "Email: $email, Password: $password, name: $name, number: $number, salary: $salary, picture: $picture" )
+        }, modifier = Modifier
             .width(170.dp)
             .height(45.dp)
         ) {
