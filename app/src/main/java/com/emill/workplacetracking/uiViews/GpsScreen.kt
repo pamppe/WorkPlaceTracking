@@ -15,5 +15,9 @@ fun GpsScreen(navController: NavController) {
     OsmMapViewWithLocationAndAreaWithButton(context, workplaceGeoPoint, workplaceRadius)
 }
 
-val workplaceGeoPoint = GeoPoint(60.158215, 24.879721) // Convert workplace location to GeoPoint
+/*
+val workplaceGeoPoint = GeoPoint(60.158215, 24.879721) // Convert workplace location to GeoPoint (Emil)
+*/
+val workplaceGeoPoint = GeoPoint(60.218764, 24.747425) // Convert workplace location to GeoPoint (Leo)
+
 const val workplaceRadius = 20.0 // meters
