@@ -57,7 +57,17 @@ android {
 
 dependencies {
 
+
+    implementation ("androidx.activity:activity-ktx:1.8.2")
+
+    implementation ("androidx.navigation:navigation-compose:2.7.7")
+
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.0")
+
     implementation ("androidx.compose.material:material:1.6.4")
+
 
     implementation ("org.osmdroid:osmdroid-android:6.1.18")
 
@@ -76,7 +86,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.04.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

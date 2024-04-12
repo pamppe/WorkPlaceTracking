@@ -3,8 +3,6 @@ package com.emill.workplacetracking.viewmodels
 import android.icu.text.SimpleDateFormat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.emill.workplacetracking.db.WorkEntry
-import com.emill.workplacetracking.db.WorkEntryDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,7 +15,7 @@ import java.util.Date
 import java.util.Locale
 
 class TimerViewModel(
-    private val WorkEntryDao : WorkEntryDao
+   // private val WorkEntryDao : WorkEntryDao
 ) : ViewModel() {
     private val _timerNotifications = MutableStateFlow<String?>(null)
     val timerNotifications: StateFlow<String?> = _timerNotifications
@@ -59,7 +57,7 @@ class TimerViewModel(
         isRunning = false
         job?.cancel()
     }
-    fun stopTimerAndSaveEntry(userId: Int) {
+    /*fun stopTimerAndSaveEntry(userId: Int) {
         if (isRunning) {
             val hoursWorked = seconds / 3600 // Assuming seconds is total seconds worked
             val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -71,7 +69,7 @@ class TimerViewModel(
                 resetTimer()
             }
         }
-    }
+    }*/
 
     fun resetTimer() {
         stopTimer()

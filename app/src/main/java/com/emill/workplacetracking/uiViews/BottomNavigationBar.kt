@@ -22,7 +22,8 @@ fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
         val items = listOf(
             NavigationItem("Home", Icons.Filled.Home),
             NavigationItem("Profile", Icons.Filled.AccountCircle), // Assuming you have an appropriate icon
-            NavigationItem("Gps", Icons.Filled.LocationOn)
+            NavigationItem("Gps", Icons.Filled.LocationOn),
+            NavigationItem("Start", Icons.Filled.LocationOn)
         )
         items.forEach { item ->
             NavigationBarItem(

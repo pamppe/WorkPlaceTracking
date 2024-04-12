@@ -30,7 +30,6 @@ fun WorkedHoursDisplay(mainViewModel: MainViewModel, userId: Int) {
             Text("Tehdyt tunnit", fontSize = 16.sp, fontWeight = FontWeight.Bold,
                 color = Color.White)
             // Implementation for displaying work entries
-            WorkEntriesDisplay(mainViewModel = mainViewModel, userId = userId)
         }
     }
 }
