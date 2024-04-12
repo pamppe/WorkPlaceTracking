@@ -57,6 +57,8 @@ android {
 
 dependencies {
 
+    implementation ("androidx.compose.material:material:1.6.4")
+
     implementation ("org.osmdroid:osmdroid-android:6.1.18")
 
     implementation ("com.google.android.gms:play-services-location:21.2.0")
@@ -69,6 +71,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -77,6 +80,9 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    //Accompanist (Permission)
+    implementation ("com.google.accompanist:accompanist-permissions:0.31.3-beta")
 
     // ViewModel and LiveData
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
