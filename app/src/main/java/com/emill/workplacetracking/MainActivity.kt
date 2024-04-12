@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
@@ -13,23 +12,22 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.room.Room
-import com.emill.workplacetracking.db.AppDatabase
-import com.emill.workplacetracking.db.MainViewModelFactory
+import androidx.navigation.compose.rememberNavController
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
-import com.emill.workplacetracking.uiViews.MyApp
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
 import com.emill.workplacetracking.utils.GPSManager
-import com.emill.workplacetracking.viewmodels.MainViewModel
 import com.emill.workplacetracking.viewmodels.TimerViewModel
-import com.emill.workplacetracking.viewmodels.TimerViewModelFactory
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import org.osmdroid.config.Configuration
@@ -62,14 +60,13 @@ class MainActivity : ComponentActivity() {
                     }
                 } else { // User has left the workplace area
                     if (timerViewModel.isTimerRunning()) {
-                        timerViewModel.stopTimerAndSaveEntry(1)
+                        //timerViewModel.stopTimerAndSaveEntry(1)
                         Log.d("LocationUpdates", "Timer stopped - outside workplace area")
                     }
                 }
             }
         }
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -81,18 +78,6 @@ class MainActivity : ComponentActivity() {
         checkAndRequestLocationPermissions()
         // Don't forget to request permissions before starting location updates
         // Check for location permissions
-
-        // Initialize your database and DAO here
-        val appDatabase: AppDatabase = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "workTrackerDba"
-        ).fallbackToDestructiveMigration().build()
-
-        val userInfoDao = appDatabase.userInfoDao()
-        val workEntryDao = appDatabase.workEntryDao()
-        // Initialize your ViewModel factories
-        val mainViewModelFactory = MainViewModelFactory(userInfoDao, workEntryDao)
-        val timerViewModelFactory = TimerViewModelFactory(workEntryDao)
 
         // Create the notification channel
         createNotificationChannel()
@@ -110,40 +95,27 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-
         setContent {
-            val mainViewModel: MainViewModel = viewModel(factory = mainViewModelFactory)
-
             // Check if user is logged in
-            if (mainViewModel.userInfo.value == null) {
-                // User is not logged in, redirect to LoginActivity
-                val intent = Intent(this, LoginActivity::class.java)
-                startActivity(intent)
-                finish() // Close MainActivity
-            }
-
-            // Provide the custom factory when retrieving the TimerViewModel
-            val timerViewModel: TimerViewModel = viewModel(factory = timerViewModelFactory)
-
-            //---- Add test data to the database ---//
-            /*
-                    val testUserId = 1
-
-                 lifecycleScope.launch {
-                        com.emill.workplacetracking.utils.TestDataGenerator.addTestData(this,workEntryDao, testUserId)
-                    }
-            */
-
             WorkPlaceTrackingTheme {
+                val navController = rememberNavController()
+                AppNavHost(navController = navController)
+            }
+              Surface (
+                  modifier = Modifier.fillMaxSize(),
+                  color = MaterialTheme.colorScheme.background
+              )
+{
                 // Here we pass the method as a lambda function
                 TimerNotificationObserver(
                     timerViewModel = timerViewModel,
                     showNotification = { message -> showNotification(message) }
                 )
-                MyApp(mainViewModel, timerViewModel)
+              //  MyApp(mainViewModel, timerViewModel)
             }
         }
     }
+
 
     private fun checkAndRequestLocationPermissions() {
         when {

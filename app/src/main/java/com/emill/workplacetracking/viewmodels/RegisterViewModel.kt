@@ -12,11 +12,11 @@ class RegisterViewModel (private val apiService: MyAPI) : ViewModel() {
     val registerRequestState: MutableStateFlow<RequestState<AuthResponse>> =
         MutableStateFlow(RequestState.Empty)
 
-    fun registerUser(email: String, password: String, name: String, phone: String, salary: String, picture: String) {
+    fun registerUser(email: String, password: String, name: String, phone: String, salary: String) {
         viewModelScope.launch {
             registerRequestState.value = RequestState.Loading
             try {
-                val response = apiService.registerUser(name, email, phone, picture, salary, password)
+                val response = apiService.registerUser(name, email, phone, salary, password)
                 if (response.isSuccessful) {
                     response.body()?.let {
                         registerRequestState.value = RequestState.Success(it)

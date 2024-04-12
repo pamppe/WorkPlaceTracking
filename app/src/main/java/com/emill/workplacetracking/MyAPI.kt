@@ -3,7 +3,10 @@ package com.emill.workplacetracking
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
     /*
@@ -23,13 +26,18 @@ import retrofit2.http.Query
     const val LOGIN_ENDPOINT = "auth/login"
     const val REGISTER_ENDPOINT = "auth/register"
 
+
     data class AuthResponse(
         val success: Boolean,
         val message: String,
-        val account: Account
+        val account: Account,
+        val token: String,
     )
 
 interface MyAPI {
+
+    @GET("user/{id}")
+    suspend fun getUserData(@Path("id") id: Int, @Header("Authorization") token: String): Response<Account>
 
     @FormUrlEncoded
     @POST(LOGIN_ENDPOINT)
@@ -46,7 +54,7 @@ interface MyAPI {
         @Field("password") password: String,
         @Field("phone") phone: String,
         @Field("salary") salary: String,
-        @Field("picture") picture: String
+       //@Field("picture") picture: String
     ): Response<AuthResponse>
 
 }

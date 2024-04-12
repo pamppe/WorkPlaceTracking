@@ -39,10 +39,6 @@ fun RegisterScreen(viewModel: RegisterViewModel) {
     }
     var salary by remember { mutableStateOf("") }
 
-    var picture by remember {
-        mutableStateOf("")
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -109,17 +105,11 @@ fun RegisterScreen(viewModel: RegisterViewModel) {
             visualTransformation = VisualTransformation.None,
             label = { Text(text = "Hourly salary") }
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = picture, onValueChange = {
-            picture = it
-        }, label = {
-            Text(text = "Picture")
-        })
 
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = {
-            viewModel.registerUser(email, password, name, number, salary, picture)
-            Log.i("Credential", "Email: $email, Password: $password, name: $name, number: $number, salary: $salary, picture: $picture" )
+            viewModel.registerUser(email, password, name, number, salary)
+            Log.i("Credential", "Email: $email, Password: $password, name: $name, number: $number")
         }, modifier = Modifier
             .width(170.dp)
             .height(45.dp)

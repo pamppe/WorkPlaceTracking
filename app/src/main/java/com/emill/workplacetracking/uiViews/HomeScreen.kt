@@ -17,23 +17,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.emill.workplacetracking.viewmodels.TimerViewModel
 import com.emill.workplacetracking.viewmodels.MainViewModel
 
 @Composable
-fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
-    val userInfo by mainViewModel.userInfo.observeAsState()
-    val userId by mainViewModel.userId.observeAsState()
+fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel, navController: NavController) {
+    //val userInfo by mainViewModel.userInfo.observeAsState()
+  //  val userId by mainViewModel.userId.observeAsState()
 
     // Track if the initial data fetch has been completed.
     val dataFetchCompleted = remember { mutableStateOf(false) }
     val showDialog = remember { mutableStateOf(false) }
 
     // Adjust LaunchedEffect to set dataFetchCompleted to true once userInfo is observed.
-    LaunchedEffect(key1 = userInfo) {
+   /* LaunchedEffect(key1 = userInfo) {
         dataFetchCompleted.value = true
         showDialog.value = userInfo == null
-    }
+    }*/
 
     if (!dataFetchCompleted.value) {
         Box(
@@ -51,16 +52,15 @@ fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
             TimerScreen(timerViewModel = timerViewModel)
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (userInfo != null) {
+           // if (userInfo != null) {
 
-                WorkedHoursDisplay(mainViewModel, userInfo!!.id)
+                //WorkedHoursDisplay(mainViewModel, userInfo!!.id)
             }
-            else if (showDialog.value) {
+            //else if (showDialog.value) {
                 // Conditionally display the UserInfoDialog based on showDialog state.
-                UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
+                //UserInfoDialog(showDialog = showDialog, viewModel = mainViewModel)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
         }
-    }
-}
+

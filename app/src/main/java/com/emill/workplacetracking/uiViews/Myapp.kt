@@ -25,21 +25,27 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.emill.workplacetracking.customFontFamily
-import com.emill.workplacetracking.viewmodels.TimerViewModel
 import com.emill.workplacetracking.viewmodels.MainViewModel
+import com.emill.workplacetracking.viewmodels.TimerViewModel
+import com.emill.workplacetracking.viewmodels.UserProfileViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
+fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel, userProfileViewModel: UserProfileViewModel) {
+
+    val navController = rememberNavController()
     val currentScreen = remember { mutableStateOf("Home") }
-    val userInfo by mainViewModel.userInfo.observeAsState()
+   // val userInfo by mainViewModel.userInfo.observeAsState()
     // Use an additional state to track whether the userInfo fetch has been attempted.
     val fetchAttempted = remember { mutableStateOf(false) }
 
     // Observe userInfo and update fetchAttempted accordingly.
-    LaunchedEffect(userInfo) {
+    LaunchedEffect(mainViewModel) {
         fetchAttempted.value = true
     }
 
@@ -82,11 +88,17 @@ fun MyApp(mainViewModel: MainViewModel, timerViewModel: TimerViewModel) {
                         .padding(innerPadding)
                         .background(LightBlue)
                 ) {
-                    when (currentScreen.value) {
-                        "Home" -> HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel)
-                        "Profile" -> UserProfileScreen(mainViewModel)
-                        "Gps" -> GpsScreen()
-                        //"Start" -> RegisterScreen()
+                    NavHost(navController, startDestination = "Home") {
+                        composable("Home") {
+                            HomeScreen(mainViewModel = mainViewModel, timerViewModel = timerViewModel, navController = navController)
+                        }
+                        composable("Profile") {
+                            UserProfileScreen(userProfileViewModel, navController)
+                        }
+                        composable("Gps") {
+                            GpsScreen(navController)
+                        }
+                        // Add other destinations as needed
                     }
                 }
             }

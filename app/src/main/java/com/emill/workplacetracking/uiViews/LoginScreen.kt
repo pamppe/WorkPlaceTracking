@@ -23,12 +23,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.emill.workplacetracking.R
+import com.emill.workplacetracking.RequestState
 import com.emill.workplacetracking.viewmodels.LoginViewModel
+import com.emill.workplacetracking.NavigationItem
 
 
 @Composable
-fun LoginScreen(viewModel: LoginViewModel) {
+fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
 
     var email by remember {
         mutableStateOf("")
@@ -36,6 +39,37 @@ fun LoginScreen(viewModel: LoginViewModel) {
 
     var password by remember {
         mutableStateOf("")
+    }
+
+    // Observe loginRequestState and userData here
+    LaunchedEffect(key1 = viewModel.loginRequestState) {
+        viewModel.loginRequestState.collect { requestState ->
+            when (requestState) {
+                is RequestState.Loading -> {
+                    // Show a loading spinner
+                }
+                is RequestState.Success -> {
+                    // Hide the loading spinner
+                    // Navigate to the profile page or update the UI with the user data
+                    navController.previousBackStackEntry?.savedStateHandle?.set("msg", "Login successful")
+                    navController.popBackStack()
+
+                }
+                is RequestState.Error -> {
+                    // Hide the loading spinner
+                    // Show an error message
+                }
+                else -> {
+                    // Handle other states
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(key1 = viewModel.userData) {
+        viewModel.userData.collect { userData ->
+            // Update the UI with the user data
+        }
     }
 
     Column(
@@ -66,6 +100,7 @@ fun LoginScreen(viewModel: LoginViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
+            navController.navigate("profile")
             viewModel.loginUser(email, password)
             Log.i("Credential", "Email : $email Password : $password")},
             modifier = Modifier

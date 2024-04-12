@@ -1,6 +1,7 @@
 package com.emill.workplacetracking
 
 data class Account(
+    val token: String,
     val created_at: String,
     val email: String,
     val id: Int,
