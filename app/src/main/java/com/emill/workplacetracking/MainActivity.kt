@@ -1,65 +1,47 @@
 package com.emill.workplacetracking
 
 import android.Manifest
-import android.app.Activity
-import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-
-import androidx.annotation.RequiresApi
-
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-
-import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
-
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.room.Room
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.emill.workplacetracking.db.AppDatabase
-import com.emill.workplacetracking.db.MainViewModelFactory
-
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
 import com.emill.workplacetracking.utils.ForegroundService
 import com.emill.workplacetracking.utils.GPSManager
-
-
 import com.emill.workplacetracking.utils.LocationCheckWorker
-import com.emill.workplacetracking.viewmodels.MainViewModel
-
+import com.emill.workplacetracking.viewmodels.LoginViewModel
 import com.emill.workplacetracking.viewmodels.TimerViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import org.osmdroid.config.Configuration
 import java.util.LinkedList
-import java.util.concurrent.TimeUnit
 
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: LoginViewModel by viewModels ()
+
     companion object {
         private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
         private const val REQUEST_CODE_FINE_LOCATION_PERMISSION = 1002
@@ -97,11 +79,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         Configuration.getInstance().userAgentValue = "com.emill.workplacetracking"
 
@@ -127,22 +108,21 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            // Check if user is logged in
             WorkPlaceTrackingTheme {
-                val navController = rememberNavController()
-                AppNavHost(navController = navController)
-            }
-              Surface (
-                  modifier = Modifier.fillMaxSize(),
-                  color = MaterialTheme.colorScheme.background
-              )
-{
-                // Here we pass the method as a lambda function
-                TimerNotificationObserver(
-                    timerViewModel = timerViewModel,
-                    showNotification = { message -> showNotification(message) }
+                Surface (
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
                 )
-              //  MyApp(mainViewModel, timerViewModel)
+                {
+                    AppNavHost(navController = rememberNavController())
+
+                    // Here we pass the method as a lambda function
+                    TimerNotificationObserver(
+                        timerViewModel = timerViewModel,
+                        showNotification = { message -> showNotification(message) }
+                    )
+                    // MyApp(mainViewModel, timerViewModel)
+                }
             }
         }
     }

@@ -1,7 +1,7 @@
 package com.emill.workplacetracking.uiViews
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -14,23 +14,20 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.emill.workplacetracking.viewmodels.UserProfileViewModel
 
+
 @Composable
 fun UserProfileScreen(viewModel: UserProfileViewModel, navController: NavController) {
-    val userData by viewModel.userData.collectAsState()
+    Log.d("UserProfileScreen", "Composing UserProfileScreen")
+    val userData by viewModel.account.collectAsState()
+    Log.d("UserProfileScreen", "User data: $userData")
 
-    Column(modifier = Modifier
-        .padding(16.dp)
-        .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Display user data
+    Column(modifier = Modifier.padding(16.dp).fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally) {
         userData?.let { user ->
-            Text(text = "Name: ${user.name}")
-            Text(text = "Email: ${user.email}")
-            Text(text = "Phone number: ${user.phone}")
-            Text(text = "Salary: ${user.salary}")
-        }
+            Text("Name: ${user.name}")
+            Text("Email: ${user.email}")
+            Text("Phone: ${user.phone}")
+            Text("Salary: ${user.salary}")
+        } ?: Text("Loading...")
     }
 }

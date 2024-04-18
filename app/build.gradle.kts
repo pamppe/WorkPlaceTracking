@@ -57,6 +57,7 @@ android {
 
 dependencies {
 
+    implementation ("io.coil-kt:coil-compose:1.4.0")
 
     implementation ("androidx.activity:activity-ktx:1.8.2")
 

@@ -1,20 +1,20 @@
 package com.emill.workplacetracking
 
+
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
-import retrofit2.http.GET
-import retrofit2.http.Header
+import retrofit2.http.Multipart
 import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.Part
 
-    /*
-    Both @Post and @Get annotations represent different types of requests.
-    However, we will treat them in a similar manner. It's essential to confirm the method (GET or POST)
-    based on your API documentation.
-    */
-
+/*
+Both @Post and @Get annotations represent different types of requests.
+However, we will treat them in a similar manner. It's essential to confirm the method (GET or POST)
+based on your API documentation.
+*/
     /*
     @Query("email") : is used to tell retrofit that this field is what is called
     email in the request Queries
@@ -26,18 +26,13 @@ import retrofit2.http.Query
     const val LOGIN_ENDPOINT = "auth/login"
     const val REGISTER_ENDPOINT = "auth/register"
 
-
-    data class AuthResponse(
-        val success: Boolean,
-        val message: String,
-        val account: Account,
-        val token: String,
-    )
+data class AuthResponse(
+    val account: Account,
+    val token: String
+)
 
 interface MyAPI {
 
-    @GET("user/{id}")
-    suspend fun getUserData(@Path("id") id: Int, @Header("Authorization") token: String): Response<Account>
 
     @FormUrlEncoded
     @POST(LOGIN_ENDPOINT)
@@ -46,15 +41,15 @@ interface MyAPI {
         @Field("password") password: String
     ): Response<AuthResponse>
 
-    @FormUrlEncoded
+    @Multipart
     @POST(REGISTER_ENDPOINT)
     suspend fun registerUser(
-        @Field("name") name: String,
-        @Field("email") email: String,
-        @Field("password") password: String,
-        @Field("phone") phone: String,
-        @Field("salary") salary: String,
-       //@Field("picture") picture: String
+        @Part("name") name: RequestBody,
+        @Part("email") email: RequestBody,
+        @Part("password") password: RequestBody,
+        @Part("phone") phone: RequestBody,
+        @Part("salary") salary: RequestBody,
+        @Part picture: MultipartBody.Part?
     ): Response<AuthResponse>
 
 }
