@@ -1,5 +1,6 @@
 package com.emill.workplacetracking
 
+import com.emill.workplacetracking.Config.BASE_URL
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.logging.HttpLoggingInterceptor
@@ -16,7 +17,6 @@ we can implement the singleton pattern.*/
 class RetrofitInstance {
 
     companion object {
-        private const val BASE_URL = "http://10.0.2.2:3000/"
         private val retrofit by lazy {
             val logger = HttpLoggingInterceptor()
             //to be able to read the response body

@@ -33,7 +33,6 @@ data class AuthResponse(
 
 interface MyAPI {
 
-
     @FormUrlEncoded
     @POST(LOGIN_ENDPOINT)
     suspend fun loginUser(

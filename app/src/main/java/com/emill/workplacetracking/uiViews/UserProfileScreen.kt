@@ -28,7 +28,7 @@ fun UserProfileScreen(viewModel: UserProfileViewModel, navController: NavControl
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         userData?.let { user ->
-            user.picture?.let { imageUrl ->
+            user.getImageUrl()?.let { imageUrl ->
                 Image(
                     painter = rememberImagePainter(imageUrl),
                     contentDescription = "Profile Image",
