@@ -15,7 +15,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,7 +31,6 @@ import androidx.navigation.NavController
 import com.emill.workplacetracking.R
 import com.emill.workplacetracking.RequestState
 import com.emill.workplacetracking.viewmodels.LoginViewModel
-import com.emill.workplacetracking.NavigationItem
 
 
 @Composable
@@ -49,10 +52,11 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
                     // Show a loading spinner
                 }
                 is RequestState.Success -> {
+                    navController.popBackStack()
+                    navController.previousBackStackEntry?.savedStateHandle?.set("msg", "Login successful")
                     // Hide the loading spinner
                     // Navigate to the profile page or update the UI with the user data
-                    navController.previousBackStackEntry?.savedStateHandle?.set("msg", "Login successful")
-                    navController.popBackStack()
+                    navController.navigate("profile")
 
                 }
                 is RequestState.Error -> {
@@ -66,32 +70,29 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
         }
     }
 
-    LaunchedEffect(key1 = viewModel.userData) {
-        viewModel.userData.collect { userData ->
-            // Update the UI with the user data
-        }
-    }
 
     Column(
-        modifier = Modifier.fillMaxSize() .background(Color.White),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(painter = painterResource(id = R.drawable.kuva1), contentDescription = "Login image",
-            modifier = Modifier.size(350.dp))
+            modifier = Modifier.size(330.dp))
 
         Text(text = "Welcome back", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = "Login")
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(13.dp))
         OutlinedTextField(value = email, onValueChange = {
             email = it
         }, label = {
             Text(text = "Email")
         })
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(13.dp))
         OutlinedTextField(value = password, onValueChange = {
             password = it
         }, label = {
@@ -100,14 +101,29 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            navController.navigate("profile")
+            Log.d("LoginScreen", "Attempting to navigate to profile")
             viewModel.loginUser(email, password)
-            Log.i("Credential", "Email : $email Password : $password")},
+            Log.i("Credential", "Email : $email Password : $password")
+            },
             modifier = Modifier
                 .width(170.dp)
                 .height(45.dp)
         ) {
             Text(text = "Login")
+        }
+
+        Spacer(modifier = Modifier.height(5.dp))
+        Text(text = "or", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(5.dp))
+        Button(onClick = {
+            navController.navigate("register")
+        },
+            modifier = Modifier
+                .width(170.dp)
+                .height(45.dp)
+        ) {
+            Text(text = "Register")
+
         }
         TextButton(onClick = {}) {
             Text(text ="Forgot your password?")
