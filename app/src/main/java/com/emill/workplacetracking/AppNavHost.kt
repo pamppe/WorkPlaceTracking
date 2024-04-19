@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.emill.workplacetracking.uiViews.LoginScreen
+import com.emill.workplacetracking.uiViews.StartScreen
 import com.emill.workplacetracking.uiViews.UserProfileScreen
 import com.emill.workplacetracking.viewmodels.LoginViewModel
 import com.emill.workplacetracking.viewmodels.LoginViewModelFactory
@@ -53,7 +54,7 @@ fun AppNavHost(
     // Set up the navigation host
     NavHost(
         navController = navController,
-        startDestination = NavigationItem.Login.route,
+        startDestination = NavigationItem.Start.route,
         modifier = modifier
     ) {
         composable(NavigationItem.Login.route) {
@@ -67,6 +68,9 @@ fun AppNavHost(
         composable(NavigationItem.Register.route) {
             // Pass the ViewModel and NavController to the UserProfileScreen
             RegisterScreen(viewModel = RegisterViewModel, navController = navController)
+        }
+        composable(NavigationItem.Start.route) {
+            StartScreen(navController = navController)
         }
     }
 }

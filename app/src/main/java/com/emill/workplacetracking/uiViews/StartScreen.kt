@@ -30,7 +30,9 @@ import com.emill.workplacetracking.R
 fun StartScreen(navController: NavController) {
 
     Column(
-        modifier = Modifier.fillMaxSize() .background(Color.White),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -52,11 +54,14 @@ fun StartScreen(navController: NavController) {
                 .height(45.dp), // Customizing height
             shape = RoundedCornerShape(20.dp) // Customizing shape
         ) {
-            Text(text = "Login")
+            Text(text = "Existing user")
         }
-        Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedButton(onClick = {navController.navigate("signup")},
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(text = "or", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedButton(onClick = {navController.navigate("register")},
             modifier = Modifier
                 .width(200.dp)
                 .height(45.dp),
@@ -67,7 +72,7 @@ fun StartScreen(navController: NavController) {
                 contentColor = Color(0xFF6454a4)
             )
         ) {
-            Text(text = "Register", color = Color(0xFF0000FF), fontWeight = FontWeight.Bold) // Set text color to blue here as well
+            Text(text = "New user", color = Color(0xFF0000FF), fontWeight = FontWeight.Bold) // Set text color to blue here as well
         }
     }
 }

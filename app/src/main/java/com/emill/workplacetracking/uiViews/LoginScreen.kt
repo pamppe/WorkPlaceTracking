@@ -79,20 +79,20 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(painter = painterResource(id = R.drawable.kuva1), contentDescription = "Login image",
-            modifier = Modifier.size(350.dp))
+            modifier = Modifier.size(330.dp))
 
         Text(text = "Welcome back", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = "Login")
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(13.dp))
         OutlinedTextField(value = email, onValueChange = {
             email = it
         }, label = {
             Text(text = "Email")
         })
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(13.dp))
         OutlinedTextField(value = password, onValueChange = {
             password = it
         }, label = {
@@ -112,7 +112,9 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
             Text(text = "Login")
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(5.dp))
+        Text(text = "or", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(5.dp))
         Button(onClick = {
             navController.navigate("register")
         },

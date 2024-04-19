@@ -40,7 +40,11 @@ fun RegisterScreen(viewModel: RegisterViewModel, navController: NavController) {
             imageUri = uri  // uri is now correctly handled as Uri?
         }
         imageUri?.let {
-            Image(painter = rememberImagePainter(it), contentDescription = "Selected Image", modifier = Modifier.size(125.dp).padding(16.dp))
+            Image(painter = rememberImagePainter(it),
+                contentDescription = "Selected Image",
+                modifier = Modifier
+                    .size(125.dp)
+                    .padding(16.dp))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -56,7 +60,7 @@ fun RegisterScreen(viewModel: RegisterViewModel, navController: NavController) {
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = salary, onValueChange = { salary = it }, keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.NumberPassword), visualTransformation = VisualTransformation.None, label = { Text("Monthly salary") })
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(28.dp))
         Button(onClick = {
             if (imageUri != null) {
                 viewModel.registerUser(name, email, number, password, salary, imageUri)
@@ -68,6 +72,5 @@ fun RegisterScreen(viewModel: RegisterViewModel, navController: NavController) {
             Text(text = "Register")
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
     }
 }

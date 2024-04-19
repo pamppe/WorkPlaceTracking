@@ -8,4 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 class UserProfileViewModel(private val apiService: MyAPI, private val loginViewModel: LoginViewModel) : ViewModel() {
     // Directly use userData from LoginViewModel
     val account: StateFlow<Account?> = loginViewModel.userData
+
+
+
 }
