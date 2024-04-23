@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") // Apply KSP plugin
-    //kotlin("kapt") // Apply kapt for Kotlin annotation processing
+    //kotlin("kapt") // Apply kapt for Kotlin annotation processin
 
 }
 
@@ -21,7 +21,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
-
 
         }
     }

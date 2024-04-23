@@ -20,10 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.emill.workplacetracking.viewmodels.TimerViewModel
 
 @Composable
-fun TimerScreen(timerViewModel: TimerViewModel = viewModel()) {
+fun TimerScreen(timerViewModel: TimerViewModel = viewModel(), navController: NavController, viewModel: TimerViewModel) {
     val time by timerViewModel.time.collectAsState()
 
     Column(
