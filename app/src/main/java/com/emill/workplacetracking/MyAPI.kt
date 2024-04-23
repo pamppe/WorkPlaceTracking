@@ -1,6 +1,7 @@
 package com.emill.workplacetracking
 
 
+import com.emill.workplacetracking.viewmodels.RequestAccessViewModel
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -9,6 +10,7 @@ import retrofit2.http.FormUrlEncoded
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Path
 
 /*
 Both @Post and @Get annotations represent different types of requests.
@@ -26,13 +28,15 @@ based on your API documentation.
     const val LOGIN_ENDPOINT = "auth/login"
     const val REGISTER_ENDPOINT = "auth/register"
 
+
 data class AuthResponse(
     val account: Account,
     val token: String
 )
 
-interface MyAPI {
 
+interface MyAPI {
+    //Log
     @FormUrlEncoded
     @POST(LOGIN_ENDPOINT)
     suspend fun loginUser(
@@ -50,5 +54,11 @@ interface MyAPI {
         @Part("salary") salary: RequestBody,
         @Part picture: MultipartBody.Part?
     ): Response<AuthResponse>
+
+        @POST("auth/reguestJoinWorkArea/{userId}")
+        suspend fun requestAccess(
+            @Path("userId") userId: String,
+            @Part("access_code") code: String
+        ): Response<AuthResponse>
 
 }
