@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 @Composable
 fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
     val items = listOf(
-        NavigationItem.Timer,   // Assuming you have a Home object in NavigationItem
+        NavigationItem.RequestAccess,   // Assuming you have a Home object in NavigationItem
         NavigationItem.Profile,
         NavigationItem.Gps
     )
@@ -24,7 +24,7 @@ fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
             NavigationBarItem(
                 icon = {
                     when (item) {
-                        NavigationItem.Timer-> Icon(Icons.Filled.Home, contentDescription = "Home")
+                        NavigationItem.RequestAccess-> Icon(Icons.Filled.Home, contentDescription = "Home")
                         NavigationItem.Profile -> Icon(Icons.Filled.AccountCircle, contentDescription = "Profile")
                         NavigationItem.Gps -> Icon(Icons.Filled.LocationOn, contentDescription = "GPS")
                         else -> Icon(Icons.Filled.Home, contentDescription = "Default") // Default case
@@ -32,7 +32,7 @@ fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
                 },
                 label = {
                     Text(when (item) {
-                        NavigationItem.Timer -> "Home"
+                        NavigationItem.Timer -> "requestAccess"
                         NavigationItem.Profile -> "Profile"
                         NavigationItem.Gps -> "GPS"
                         else -> "Default" // Default label

@@ -1,9 +1,11 @@
 package com.emill.workplacetracking.uiViews
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -20,6 +22,9 @@ import com.emill.workplacetracking.viewmodels.RequestAccessViewModel
 fun RequestAccessScreen(viewModel: RequestAccessViewModel, navController: NavController) {
     val accessCode = remember { mutableStateOf("") }
 
+    // Assume this is your list of pending requests
+    val pendingRequests = viewModel.pendingRequests
+
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
             value = accessCode.value,
@@ -29,6 +34,7 @@ fun RequestAccessScreen(viewModel: RequestAccessViewModel, navController: NavCon
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
+            Log.d("RequestAccess", "Button clicked with access code: ${accessCode.value}")
             viewModel.requestAccess(accessCode.value)
         }) {
             Text(text = "Request Access")
@@ -38,7 +44,11 @@ fun RequestAccessScreen(viewModel: RequestAccessViewModel, navController: NavCon
 
         Text(text = "Previous Requests", fontSize = 18.sp)
 
-        // Here you can add a list of previous requests made by the user.
-        // You can use a LazyColumn to display a potentially large number of items.
+        // Display the list of pending requests
+        LazyColumn {
+            items(pendingRequests) { request ->
+                Text(text = "Request ID: ${request.id}, Status: ${request.status}")
+            }
+        }
     }
 }

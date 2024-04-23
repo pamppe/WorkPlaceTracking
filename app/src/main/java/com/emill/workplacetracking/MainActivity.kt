@@ -24,7 +24,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
 import androidx.work.WorkManager
+import com.emill.workplacetracking.DB.AppDatabase
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
 import com.emill.workplacetracking.utils.ForegroundService
@@ -83,6 +85,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java, "database-name"
+        ).build()
+
+        val tokenDao = db.tokenDao()
+
 
         Configuration.getInstance().userAgentValue = "com.emill.workplacetracking"
 
@@ -114,7 +123,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 )
                 {
-                    AppNavHost(navController = rememberNavController())
+                    AppNavHost(navController = rememberNavController(), tokenDao = tokenDao)
 
                     // Here we pass the method as a lambda function
                     TimerNotificationObserver(

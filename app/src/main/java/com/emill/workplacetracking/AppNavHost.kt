@@ -13,9 +13,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.emill.workplacetracking.DB.TokenDao
 import com.emill.workplacetracking.uiViews.BottomNavigationBar
 import com.emill.workplacetracking.uiViews.GpsScreen
 import com.emill.workplacetracking.uiViews.LoginScreen
+import com.emill.workplacetracking.uiViews.RequestAccessScreen
 import com.emill.workplacetracking.uiViews.StartScreen
 import com.emill.workplacetracking.uiViews.TimerScreen
 import com.emill.workplacetracking.uiViews.UserProfileScreen
@@ -23,6 +25,8 @@ import com.emill.workplacetracking.viewmodels.LoginViewModel
 import com.emill.workplacetracking.viewmodels.LoginViewModelFactory
 import com.emill.workplacetracking.viewmodels.RegisterViewModel
 import com.emill.workplacetracking.viewmodels.RegisterViewModelFactory
+import com.emill.workplacetracking.viewmodels.RequestAccessViewModel
+import com.emill.workplacetracking.viewmodels.RequestAccessViewModelFactory
 import com.emill.workplacetracking.viewmodels.TimerViewModel
 import com.emill.workplacetracking.viewmodels.UserProfileViewModel
 import com.emill.workplacetracking.viewmodels.UserProfileViewModelFactory
@@ -31,7 +35,9 @@ import com.emill.workplacetracking.viewmodels.UserProfileViewModelFactory
 @Composable
 fun AppNavHost(
     navController: NavHostController,
+    tokenDao: TokenDao,
     modifier: Modifier = Modifier
+
 ) {
     val context = LocalContext.current
     // Obtain the nearest ViewModelStoreOwner, typically the activity or nav host
@@ -41,12 +47,12 @@ fun AppNavHost(
     // Create view models using the ViewModelProvider and their factories
     val TimerViewModel: TimerViewModel = ViewModelProvider(viewModelStoreOwner).get(TimerViewModel::class.java)
     val RegisterViewModel: RegisterViewModel = ViewModelProvider(viewModelStoreOwner, RegisterViewModelFactory(apiService, context)).get(RegisterViewModel::class.java)
-    val loginViewModel: LoginViewModel = ViewModelProvider(viewModelStoreOwner, LoginViewModelFactory(apiService)).get(LoginViewModel::class.java)
+    val loginViewModel: LoginViewModel = ViewModelProvider(viewModelStoreOwner, LoginViewModelFactory(apiService, tokenDao)).get(LoginViewModel::class.java)
     val userProfileViewModel: UserProfileViewModel = ViewModelProvider(viewModelStoreOwner, UserProfileViewModelFactory(apiService, loginViewModel)).get(UserProfileViewModel::class.java)
-
+    val requestAccessViewModel: RequestAccessViewModel = ViewModelProvider(viewModelStoreOwner, RequestAccessViewModelFactory(apiService, loginViewModel, tokenDao)).get(RequestAccessViewModel::class.java)
     // Current Route State
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    val showBottomBar = currentRoute in listOf("timer", "profile", "gps")
+    val showBottomBar = currentRoute in listOf("requestAccess", "profile", "gps")
 
     Scaffold(
         bottomBar = {
@@ -66,6 +72,7 @@ fun AppNavHost(
             composable(NavigationItem.Register.route) { RegisterScreen(viewModel = RegisterViewModel, navController = navController) }
             composable(NavigationItem.Timer.route) { TimerScreen(viewModel = TimerViewModel, navController = navController) }
             composable(NavigationItem.Gps.route) {  GpsScreen(navController = navController)  }
+            composable(NavigationItem.RequestAccess.route) { RequestAccessScreen(viewModel = requestAccessViewModel, navController = navController) }
             // Define GPS and other screens as needed
         }
     }

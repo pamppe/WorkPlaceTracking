@@ -1,12 +1,12 @@
 package com.emill.workplacetracking
 
 
-import com.emill.workplacetracking.viewmodels.RequestAccessViewModel
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -55,10 +55,12 @@ interface MyAPI {
         @Part picture: MultipartBody.Part?
     ): Response<AuthResponse>
 
-        @POST("auth/reguestJoinWorkArea/{userId}")
-        suspend fun requestAccess(
-            @Path("userId") userId: String,
-            @Part("access_code") code: String
-        ): Response<AuthResponse>
+    @FormUrlEncoded
+    @POST("/workAreas/reguestJoinWorkArea/{userId}")
+    suspend fun requestAccess(
+        @Path("userId") userId: Int,
+        @Field("access_code") code: String,
+        @Header("Authorization") token: String
+    ): Response<AuthResponse>
 
 }
