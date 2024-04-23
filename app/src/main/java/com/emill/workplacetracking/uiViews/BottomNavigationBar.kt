@@ -1,7 +1,6 @@
 package com.emill.workplacetracking.uiViews
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import NavigationItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
@@ -11,30 +10,37 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+
 
 @Composable
 fun BottomNavigationBar(currentRoute: String, onNavigate: (String) -> Unit) {
+    val items = listOf(
+        NavigationItem.Timer,   // Assuming you have a Home object in NavigationItem
+        NavigationItem.Profile,
+        NavigationItem.Gps
+    )
     NavigationBar {
-        val items = listOf(
-            NavigationItem("Home", Icons.Filled.Home),
-            NavigationItem("Profile", Icons.Filled.AccountCircle), // Assuming you have an appropriate icon
-            NavigationItem("Gps", Icons.Filled.LocationOn),
-            NavigationItem("Start", Icons.Filled.LocationOn)
-        )
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(18.dp)) }, // Smaller icons
-                label = { Text(item.title, fontSize = 10.sp) }, // Smaller text
-                selected = currentRoute == item.title,
-                onClick = { onNavigate(item.title) },
-                // Apply padding inside NavigationBarItem for further size adjustments
-                modifier = Modifier.padding(vertical = 1.dp) // Reduce padding to make items appear smaller
+                icon = {
+                    when (item) {
+                        NavigationItem.Timer-> Icon(Icons.Filled.Home, contentDescription = "Home")
+                        NavigationItem.Profile -> Icon(Icons.Filled.AccountCircle, contentDescription = "Profile")
+                        NavigationItem.Gps -> Icon(Icons.Filled.LocationOn, contentDescription = "GPS")
+                        else -> Icon(Icons.Filled.Home, contentDescription = "Default") // Default case
+                    }
+                },
+                label = {
+                    Text(when (item) {
+                        NavigationItem.Timer -> "Home"
+                        NavigationItem.Profile -> "Profile"
+                        NavigationItem.Gps -> "GPS"
+                        else -> "Default" // Default label
+                    })
+                },
+                selected = currentRoute == item.route,
+                onClick = { onNavigate(item.route) }
             )
         }
     }
 }
-data class NavigationItem(val title: String, val icon: ImageVector)
