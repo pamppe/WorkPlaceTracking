@@ -15,7 +15,6 @@ we can implement the singleton pattern.*/
 // Creating Retrofit and ApiService Singletons:
 
 class RetrofitInstance {
-
     companion object {
         private val retrofit by lazy {
             val logger = HttpLoggingInterceptor()

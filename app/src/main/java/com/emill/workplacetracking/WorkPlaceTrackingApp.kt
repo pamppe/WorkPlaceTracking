@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.content.Context
 
 class WorkPlaceTrackingApp : Application() {
-
     override fun onCreate() {
         super.onCreate()
         val channel = NotificationChannel(

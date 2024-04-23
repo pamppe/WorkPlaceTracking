@@ -49,7 +49,7 @@ fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel, nav
         }
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
-            TimerScreen(timerViewModel = timerViewModel)
+            TimerScreen(TimerViewModel(), navController, timerViewModel)
             Spacer(modifier = Modifier.height(16.dp))
 
            // if (userInfo != null) {
