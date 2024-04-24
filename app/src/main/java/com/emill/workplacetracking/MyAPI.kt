@@ -1,11 +1,13 @@
 package com.emill.workplacetracking
 
 
+import com.google.gson.annotations.SerializedName
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -32,6 +34,15 @@ based on your API documentation.
 data class AuthResponse(
     val account: Account,
     val token: String
+)
+
+data class WorkAreaRequest(
+    @SerializedName("worker_id") val workerId: Int,
+    @SerializedName("workArea_id") val workAreaId: Int,
+    @SerializedName("is_active") val isActive: Int,
+    @SerializedName("joined_at") val joinedAt: String,
+    @SerializedName("approved") val approved: Int,
+    @SerializedName("workArea_name") val workAreaName: String
 )
 
 
@@ -63,4 +74,9 @@ interface MyAPI {
         @Header("Authorization") token: String
     ): Response<AuthResponse>
 
+    @GET("/workAreas/requests/{userId}")
+    suspend fun getPendingWorkAreas(
+        @Path("userId") userId: Int,
+        @Header("Authorization") token: String
+    ): Response<List<WorkAreaRequest>>
 }

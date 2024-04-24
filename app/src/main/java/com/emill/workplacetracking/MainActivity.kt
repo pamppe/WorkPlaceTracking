@@ -23,10 +23,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.Navigation.findNavController
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import androidx.work.WorkManager
 import com.emill.workplacetracking.DB.AppDatabase
+import com.emill.workplacetracking.DB.TokenDao
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
 import com.emill.workplacetracking.utils.ForegroundService
@@ -36,12 +39,13 @@ import com.emill.workplacetracking.viewmodels.LoginViewModel
 import com.emill.workplacetracking.viewmodels.TimerViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import java.util.LinkedList
 
 
 class MainActivity : ComponentActivity() {
-
+    private lateinit var tokenDao: TokenDao
     private val viewModel: LoginViewModel by viewModels ()
 
     companion object {
@@ -90,7 +94,7 @@ class MainActivity : ComponentActivity() {
             AppDatabase::class.java, "database-name"
         ).build()
 
-        val tokenDao = db.tokenDao()
+        tokenDao = db.tokenDao()
 
 
         Configuration.getInstance().userAgentValue = "com.emill.workplacetracking"
@@ -249,6 +253,21 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         gpsManager.startLocationUpdates(locationCallback)
+
+        /*lifecycleScope.launch {
+            val token = tokenDao.getToken()
+            val navController = rememberNavController()
+            if (token != null) {
+                // Navigate to the main screen
+                navController.navigate(R.id.profile)
+                finish()
+            } else {
+                // Navigate to the login screen
+                val intent = Intent(this@MainActivity, NavigationItem.Login::class.java)
+                startActivity(intent)
+                finish()
+            }
+        }*/
     }
 
     override fun onStop() {
