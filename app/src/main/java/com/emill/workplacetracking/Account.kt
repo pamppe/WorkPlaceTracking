@@ -12,3 +12,4 @@ data class Account(
 {
     fun getImageUrl(): String? = picture?.let { "${Config.UPLOADS_PATH}$it" }
     }
+

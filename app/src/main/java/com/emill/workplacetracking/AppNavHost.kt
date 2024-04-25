@@ -64,7 +64,7 @@ fun AppNavHost(
             composable(NavigationItem.Login.route) { LoginScreen(viewModel = loginViewModel, navController = navController) }
             composable(NavigationItem.Profile.route) { UserProfileScreen(viewModel = userProfileViewModel, navController = navController) }
             composable(NavigationItem.Register.route) { RegisterScreen(viewModel = RegisterViewModel, navController = navController) }
-            composable(NavigationItem.Timer.route) { TimerScreen(viewModel = TimerViewModel, navController = navController) }
+            composable(NavigationItem.Timer.route) { TimerScreen(timerViewModel = TimerViewModel, navController = navController) }
             composable(NavigationItem.Gps.route) {  GpsScreen(navController = navController)  }
             // Define GPS and other screens as needed
         }
