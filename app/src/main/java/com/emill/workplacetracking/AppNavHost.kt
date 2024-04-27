@@ -13,7 +13,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.emill.workplacetracking.DB.Repository
 import com.emill.workplacetracking.DB.TokenDao
+import com.emill.workplacetracking.DB.UserDao
 import com.emill.workplacetracking.uiViews.BottomNavigationBar
 import com.emill.workplacetracking.uiViews.GpsScreen
 import com.emill.workplacetracking.uiViews.LoginScreen
@@ -36,6 +38,7 @@ import com.emill.workplacetracking.viewmodels.UserProfileViewModelFactory
 fun AppNavHost(
     navController: NavHostController,
     tokenDao: TokenDao,
+    userDao: UserDao,
     modifier: Modifier = Modifier
 
 ) {
@@ -46,9 +49,10 @@ fun AppNavHost(
 
     // Create view models using the ViewModelProvider and their factories
     val TimerViewModel: TimerViewModel = ViewModelProvider(viewModelStoreOwner).get(TimerViewModel::class.java)
+    val repository = Repository(tokenDao, userDao)
     val RegisterViewModel: RegisterViewModel = ViewModelProvider(viewModelStoreOwner, RegisterViewModelFactory(apiService, context)).get(RegisterViewModel::class.java)
-    val loginViewModel: LoginViewModel = ViewModelProvider(viewModelStoreOwner, LoginViewModelFactory(apiService, tokenDao)).get(LoginViewModel::class.java)
-    val userProfileViewModel: UserProfileViewModel = ViewModelProvider(viewModelStoreOwner, UserProfileViewModelFactory(apiService, loginViewModel)).get(UserProfileViewModel::class.java)
+    val loginViewModel: LoginViewModel = ViewModelProvider(viewModelStoreOwner, LoginViewModelFactory(apiService, tokenDao, repository)).get(LoginViewModel::class.java)
+    val userProfileViewModel: UserProfileViewModel = ViewModelProvider(viewModelStoreOwner, UserProfileViewModelFactory(apiService, loginViewModel, repository)).get(UserProfileViewModel::class.java)
     val requestAccessViewModel: RequestAccessViewModel = ViewModelProvider(viewModelStoreOwner, RequestAccessViewModelFactory(apiService, loginViewModel, tokenDao)).get(RequestAccessViewModel::class.java)
     // Current Route State
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route

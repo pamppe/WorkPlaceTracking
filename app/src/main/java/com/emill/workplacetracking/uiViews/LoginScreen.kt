@@ -44,6 +44,17 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
         mutableStateOf("")
     }
 
+    // Observe userLiveData here (this will be triggered when the user data is available)
+    LaunchedEffect(key1 = viewModel.userLiveData) {
+        viewModel.userLiveData.collect { user ->
+            user?.let {
+                email = it.email
+                password = it.password
+                viewModel.loginUser(email, password)
+            }
+        }
+    }
+
     // Observe loginRequestState and userData here
     LaunchedEffect(key1 = viewModel.loginRequestState) {
         viewModel.loginRequestState.collect { requestState ->

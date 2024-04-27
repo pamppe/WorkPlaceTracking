@@ -30,6 +30,7 @@ import androidx.room.Room
 import androidx.work.WorkManager
 import com.emill.workplacetracking.DB.AppDatabase
 import com.emill.workplacetracking.DB.TokenDao
+import com.emill.workplacetracking.DB.UserDao
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
 import com.emill.workplacetracking.utils.ForegroundService
@@ -46,6 +47,7 @@ import java.util.LinkedList
 
 class MainActivity : ComponentActivity() {
     private lateinit var tokenDao: TokenDao
+    private lateinit var userDao: UserDao
     private val viewModel: LoginViewModel by viewModels ()
 
     companion object {
@@ -95,7 +97,7 @@ class MainActivity : ComponentActivity() {
         ).build()
 
         tokenDao = db.tokenDao()
-
+        userDao = db.userDao()
 
         Configuration.getInstance().userAgentValue = "com.emill.workplacetracking"
 
@@ -127,7 +129,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 )
                 {
-                    AppNavHost(navController = rememberNavController(), tokenDao = tokenDao)
+                    AppNavHost(navController = rememberNavController(), tokenDao = tokenDao, userDao = userDao)
 
                     // Here we pass the method as a lambda function
                     TimerNotificationObserver(
