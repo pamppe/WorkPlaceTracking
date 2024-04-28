@@ -1,14 +1,18 @@
 package com.emill.workplacetracking
 
 
+import com.google.gson.annotations.SerializedName
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Path
 
 /*
 Both @Post and @Get annotations represent different types of requests.
@@ -26,13 +30,24 @@ based on your API documentation.
     const val LOGIN_ENDPOINT = "auth/login"
     const val REGISTER_ENDPOINT = "auth/register"
 
+
 data class AuthResponse(
     val account: Account,
     val token: String
 )
 
-interface MyAPI {
+data class WorkAreaRequest(
+    @SerializedName("worker_id") val workerId: Int,
+    @SerializedName("workArea_id") val workAreaId: Int,
+    @SerializedName("is_active") val isActive: Int,
+    @SerializedName("joined_at") val joinedAt: String,
+    @SerializedName("approved") val approved: Int,
+    @SerializedName("workArea_name") val workAreaName: String
+)
 
+
+interface MyAPI {
+    //Log
     @FormUrlEncoded
     @POST(LOGIN_ENDPOINT)
     suspend fun loginUser(
@@ -51,4 +66,17 @@ interface MyAPI {
         @Part picture: MultipartBody.Part?
     ): Response<AuthResponse>
 
+    @FormUrlEncoded
+    @POST("/workAreas/reguestJoinWorkArea/{userId}")
+    suspend fun requestAccess(
+        @Path("userId") userId: Int,
+        @Field("access_code") code: String,
+        @Header("Authorization") token: String
+    ): Response<AuthResponse>
+
+    @GET("/workAreas/requests/{userId}")
+    suspend fun getPendingWorkAreas(
+        @Path("userId") userId: Int,
+        @Header("Authorization") token: String
+    ): Response<List<WorkAreaRequest>>
 }
