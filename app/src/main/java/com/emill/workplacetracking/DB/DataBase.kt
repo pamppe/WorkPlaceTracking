@@ -31,6 +31,9 @@ interface TokenDao {
 
     @Query("SELECT * FROM Token LIMIT 1")
     suspend fun getToken(): Token?
+
+    @Query("DELETE FROM Token")
+    suspend fun deleteToken()
 }
 
 

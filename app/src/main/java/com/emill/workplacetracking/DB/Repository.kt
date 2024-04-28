@@ -6,6 +6,12 @@ class Repository(private val tokenDao: TokenDao, private val userDao: UserDao) {
     suspend fun getToken(): String? {
         return tokenDao.getToken()?.token
     }
+    suspend fun saveToken(token: String) {
+        tokenDao.saveToken(Token(token = token))
+    }
+    suspend fun deleteToken() {
+        tokenDao.deleteToken()
+    }
 
     suspend fun saveUser(user: User) {
         userDao.saveUser(user)
