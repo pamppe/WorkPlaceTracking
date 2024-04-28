@@ -36,6 +36,7 @@ class LoginViewModel(
         }
     }
 
+
     fun loginUser(email: String, password: String) {
         viewModelScope.launch {
             loginRequestState.value = RequestState.Loading
@@ -50,9 +51,11 @@ class LoginViewModel(
                     tokenData.value = authResponse.token
                     loginRequestState.value = RequestState.Success(authResponse)
                     Log.d("User logged in:", tokenData.value ?: "No token")
+
                     // Save the token to the database
                     val token = Token(token = authResponse.token)
                     tokenDao.saveToken(token)
+
                 } else {
                     throw Exception("Error: ${response.code()}")
                 }

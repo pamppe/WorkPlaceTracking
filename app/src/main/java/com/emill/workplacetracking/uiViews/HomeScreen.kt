@@ -17,12 +17,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.emill.workplacetracking.viewmodels.TimerViewModel
 import com.emill.workplacetracking.viewmodels.MainViewModel
 
 @Composable
 fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel, navController: NavController) {
+    val timerViewModel: TimerViewModel = viewModel()
     //val userInfo by mainViewModel.userInfo.observeAsState()
   //  val userId by mainViewModel.userId.observeAsState()
 
@@ -49,7 +51,7 @@ fun HomeScreen(mainViewModel: MainViewModel, timerViewModel: TimerViewModel, nav
         }
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
-            TimerScreen(TimerViewModel(), navController, timerViewModel)
+            TimerScreen(timerViewModel, navController)
             Spacer(modifier = Modifier.height(16.dp))
 
            // if (userInfo != null) {
