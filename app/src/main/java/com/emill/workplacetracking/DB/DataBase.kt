@@ -36,7 +36,8 @@ interface TokenDao {
 
 @Entity
 data class User(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
     val email: String,
     var password: String
 )
@@ -44,9 +45,7 @@ data class User(
 @Dao
 interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun saveUser(user: User){
-        user.password = hashPassword(user.password)
-    }
+    suspend fun saveUser(user: User)
 
     @Query("SELECT * FROM User LIMIT 1")
     suspend fun getUser(): User?

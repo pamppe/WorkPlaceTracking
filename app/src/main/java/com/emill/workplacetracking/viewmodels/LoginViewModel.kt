@@ -11,7 +11,6 @@ import com.emill.workplacetracking.DB.TokenDao
 import com.emill.workplacetracking.DB.User
 import com.emill.workplacetracking.MyAPI
 import com.emill.workplacetracking.RequestState
-
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -30,21 +29,25 @@ class LoginViewModel(
         viewModelScope.launch {
             val user = repository.getUser()
             user?.let {
-                userLiveData.value = it
-                loginUser(it.email, it.password)
+                if (it.email.isNotEmpty() && it.password.isNotEmpty()) {
+                    userLiveData.value = it
+                    loginUser(it.email, it.password)
+                }
             }
         }
     }
 
-
     fun loginUser(email: String, password: String) {
+
+
         viewModelScope.launch {
             loginRequestState.value = RequestState.Loading
             try {
                 val response = apiService.loginUser(email, password)
                 if (response.isSuccessful && response.body() != null) {
                     response.body()?.let {
-                        repository.saveUser(User(email = email, password = password))
+                        val user = User(email = email, password = password)
+                        repository.saveUser(user)
                     }
                     val authResponse = response.body()!!
                     userData.value = authResponse.account // Directly assign Account
