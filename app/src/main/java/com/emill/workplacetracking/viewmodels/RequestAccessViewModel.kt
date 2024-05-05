@@ -7,9 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.emill.workplacetracking.DB.TokenDao
 import com.emill.workplacetracking.MyAPI
 import com.emill.workplacetracking.WorkAreaRequest
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class RequestAccessViewModel(private val apiService: MyAPI, private val loginViewModel: LoginViewModel, private val tokenDao: TokenDao) : ViewModel() {
+    init {
+        getPendingWorkAreas()
+    }
+
     fun requestAccess(code: String) {
         viewModelScope.launch {
             Log.d("RequestAccess", "requestAccess function called with code: $code")
@@ -23,6 +28,7 @@ class RequestAccessViewModel(private val apiService: MyAPI, private val loginVie
                     Log.d("RequestAccess", "API call made. Response: $response")
                     if (response.isSuccessful && response.body() != null) {
                         // Handle successful response
+                        getPendingWorkAreas() // Update the list after the request is made
                     } else {
                         throw Exception("Error: ${response.code()}")
                     }
@@ -34,7 +40,9 @@ class RequestAccessViewModel(private val apiService: MyAPI, private val loginVie
             }
         }
     }
-    val pendingRequests = mutableStateOf<List<WorkAreaRequest>>(emptyList())
+
+    //val pendingRequests = mutableStateOf<List<WorkAreaRequest>>(emptyList())
+    val pendingRequests = MutableStateFlow<List<WorkAreaRequest>>(emptyList())
     fun getPendingWorkAreas() {
         viewModelScope.launch {
             try {
@@ -56,5 +64,4 @@ class RequestAccessViewModel(private val apiService: MyAPI, private val loginVie
             }
         }
     }
-
 }

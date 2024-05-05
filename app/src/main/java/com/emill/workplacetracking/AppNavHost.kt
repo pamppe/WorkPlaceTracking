@@ -56,7 +56,7 @@ fun AppNavHost(
     val requestAccessViewModel: RequestAccessViewModel = ViewModelProvider(viewModelStoreOwner, RequestAccessViewModelFactory(apiService, loginViewModel, tokenDao)).get(RequestAccessViewModel::class.java)
     // Current Route State
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    val showBottomBar = currentRoute in listOf("requestAccess", "profile", "gps")
+    val showBottomBar = currentRoute in listOf("timer", "profile", "gps")
 
     Scaffold(
         bottomBar = {
@@ -77,7 +77,6 @@ fun AppNavHost(
             composable(NavigationItem.Timer.route) { TimerScreen(timerViewModel = TimerViewModel, navController = navController) }
             composable(NavigationItem.Gps.route) {  GpsScreen(navController = navController)  }
             composable(NavigationItem.RequestAccess.route) { RequestAccessScreen(viewModel = requestAccessViewModel, navController = navController) }
-            // Define GPS and other screens as needed
         }
     }
 }
