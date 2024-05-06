@@ -21,6 +21,7 @@ class UserProfileViewModel(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 repository.deleteUser()
+                repository.deleteToken()
             }
             navController.navigate("start")
         }

@@ -3,8 +3,10 @@ package com.emill.workplacetracking
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
@@ -17,6 +19,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -24,7 +28,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.Navigation.findNavController
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import androidx.work.WorkManager
@@ -32,6 +35,7 @@ import com.emill.workplacetracking.DB.AppDatabase
 import com.emill.workplacetracking.DB.TokenDao
 import com.emill.workplacetracking.DB.UserDao
 import com.emill.workplacetracking.ui.theme.WorkPlaceTrackingTheme
+import com.emill.workplacetracking.uiViews.LeavingAreaPopUp
 import com.emill.workplacetracking.uiViews.TimerNotificationObserver
 import com.emill.workplacetracking.utils.ForegroundService
 import com.emill.workplacetracking.utils.GPSManager
@@ -42,6 +46,8 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.LinkedList
 
 
@@ -49,27 +55,40 @@ class MainActivity : ComponentActivity() {
     private lateinit var tokenDao: TokenDao
     private lateinit var userDao: UserDao
     private val viewModel: LoginViewModel by viewModels ()
-
+    val showDialog = mutableStateOf(false)
     companion object {
         private const val REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION = 1001
         private const val REQUEST_CODE_FINE_LOCATION_PERMISSION = 1002
         private const val REQUEST_CODE_COARSE_LOCATION_PERMISSION = 1003
     }
-
+    private lateinit var retrofit: Retrofit
     private lateinit var gpsManager: GPSManager
+    private var workAreaDetails: WorkAreaDetails? = null
     private val timerViewModel: TimerViewModel by viewModels()
+    private val loginViewModel: LoginViewModel by viewModels()
+
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
                 // Use your location here
+                val user = loginViewModel.userData.value
+                val workAreaDetails = workAreaDetails
                 val workplaceLocation = Location("").apply {
-                    //Emil
-                    /*latitude = 60.158215 // Workplace latitude
-                    longitude = 24.879721 // Workplace longitude*/
-                    //Leo
-                    latitude = 60.218764 // Workplace latitude
-                    longitude = 24.747425 // Workplace longitude
+                    latitude = workAreaDetails?.latitude ?: 0.0
+                    longitude = workAreaDetails?.longitude ?: 0.0
                 }
+                val radius = workAreaDetails?.radius ?: 0f
+
+                val workerId = user?.id ?: 0
+                val workAreaId = workAreaDetails?.workAreaId ?: 0
+
+
+                // Start monitoring the work area
+                gpsManager.startMonitoringWorkArea(workerId, workAreaId, workplaceLocation, radius)
+
+                // Register the receiver for location updates
+                val filter = IntentFilter("LOCATION_UPDATE")
+                registerReceiver(locationUpdateReceiver, filter, RECEIVER_NOT_EXPORTED)
                 val distanceToWorkplace = location.distanceTo(workplaceLocation)
 
                 if (distanceToWorkplace <= 20f) { // User is within the workplace area
@@ -91,6 +110,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize the Retrofit instance
+        retrofit = Retrofit.Builder()
+            .baseUrl(Config.BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
         val db = Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java, "database-name"
@@ -101,8 +126,11 @@ class MainActivity : ComponentActivity() {
 
         Configuration.getInstance().userAgentValue = "com.emill.workplacetracking"
 
-        gpsManager = GPSManager(this)
+        gpsManager = GPSManager(this, retrofit)
 
+        lifecycleScope.launch {
+            fetchWorkAreaAndUserDetails()
+        }
         // Requesting location permissions
         // Don't forget to request permissions before starting location updates
         // Check for location permissions
@@ -137,7 +165,29 @@ class MainActivity : ComponentActivity() {
                         showNotification = { message -> showNotification(message) }
                     )
                     // MyApp(mainViewModel, timerViewModel)
+                    ShowDialog()
                 }
+            }
+        }
+    }
+
+    private suspend fun fetchWorkAreaAndUserDetails() {
+        val myAPI = retrofit.create(MyAPI::class.java)
+        val token = tokenDao.getToken()?.token
+        val workAreaId = 1 // Replace with the actual work area ID
+
+        val workAreaDetailsResponse = token?.let { myAPI.getWorkAreaDetails(workAreaId, it) }
+
+        if (workAreaDetailsResponse != null) {
+            if (workAreaDetailsResponse.isSuccessful) {
+
+                val workAreaDetails = workAreaDetailsResponse.body()
+                val user = loginViewModel.userData.value
+
+                // Now you have workAreaDetails and user, you can start location tracking
+                startLocationTracking()
+            } else {
+                Log.d("WorkAreaDetails", "Error: ${workAreaDetailsResponse.code()}")
             }
         }
     }
@@ -222,6 +272,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    fun ShowDialog() {
+        if (showDialog.value) {
+            LeavingAreaPopUp()
+        }
+    }
+    private val locationUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "LOCATION_UPDATE") {
+                val isWithinWorkplace = intent.getBooleanExtra("isWithinWorkplace", true)
+                if (!isWithinWorkplace) {
+                    // User has left the area. Show the dialog.
+                    // Make sure to run this on the main thread if you're calling it from a background thread.
+                    showDialog.value = true
+                }
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(
@@ -248,10 +317,20 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startLocationTracking() {
-        // Implement your logic to start location updates using GPSManager
+        // Check for location permission before starting tracking
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+            && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted, handle the permission request
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                REQUEST_CODE_FINE_LOCATION_PERMISSION
+            )
+            return
+        }
+        // Start location updates
         gpsManager.startLocationUpdates(locationCallback)
     }
-
     override fun onStart() {
         super.onStart()
         gpsManager.startLocationUpdates(locationCallback)
@@ -286,6 +365,8 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         // Stop location updates when the activity is no longer active
         gpsManager.stopLocationUpdates(locationCallback)
+        // Unregister the receiver
+        unregisterReceiver(locationUpdateReceiver)
         // Stop the foreground service
         val intent = Intent(this, ForegroundService::class.java).apply {
             action = ForegroundService.Actions.STOP.toString()
