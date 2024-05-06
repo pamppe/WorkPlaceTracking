@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.DrawerValue
 import androidx.compose.material.Scaffold
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.rememberDrawerState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -83,7 +85,7 @@ fun AppNavHost(
     val userProfileViewModel: UserProfileViewModel = ViewModelProvider(viewModelStoreOwner, UserProfileViewModelFactory(apiService, loginViewModel, repository)).get(UserProfileViewModel::class.java)
     val requestAccessViewModel: RequestAccessViewModel = ViewModelProvider(viewModelStoreOwner, RequestAccessViewModelFactory(apiService, loginViewModel, tokenDao)).get(RequestAccessViewModel::class.java)
 
-    val scaffoldState = rememberScaffoldState()
+    val scaffoldState = rememberScaffoldState(drawerState = rememberDrawerState(initialValue = DrawerValue.Closed))
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -94,7 +96,11 @@ fun AppNavHost(
                 navigationIcon = {
                     IconButton(onClick = {
                         scope.launch {
-                            scaffoldState.drawerState.open()
+                            if (scaffoldState.drawerState.isClosed) {
+                                scaffoldState.drawerState.open()
+                            } else {
+                                scaffoldState.drawerState.close()
+                            }
                         }
                     }) {
                         Icon(Icons.Filled.Menu, contentDescription = "Menu")
@@ -124,15 +130,12 @@ fun AppNavHost(
 @Composable
 fun DrawerContent(navController: NavController, scaffoldState: ScaffoldState, scope: CoroutineScope) {
     Column(modifier = Modifier.padding(16.dp)) {
-        // List of items in the drawer
         listOf(
             NavigationItem.Start to Icons.Filled.Home,
             NavigationItem.Profile to Icons.Filled.AccountCircle,
             NavigationItem.Gps to Icons.Filled.LocationOn,
             NavigationItem.RequestAccess to Icons.Filled.Add,
             NavigationItem.Timer to Icons.Filled.DateRange,
-
-            // Add other items as needed
         ).forEach { (item, icon) ->
             DrawerButton(item.route.replaceFirstChar { it.uppercase() }, icon) {
                 navController.navigate(item.route) {
