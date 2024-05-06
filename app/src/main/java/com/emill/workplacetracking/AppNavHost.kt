@@ -87,7 +87,7 @@ fun AppNavHost(
 
     val scaffoldState = rememberScaffoldState(drawerState = rememberDrawerState(initialValue = DrawerValue.Closed))
     val scope = rememberCoroutineScope()
-
+    
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {

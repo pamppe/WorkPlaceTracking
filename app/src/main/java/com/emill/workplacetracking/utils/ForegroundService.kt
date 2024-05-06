@@ -2,6 +2,8 @@ package com.emill.workplacetracking.utils
 
 import android.annotation.SuppressLint
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
@@ -12,6 +14,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.emill.workplacetracking.R
+import com.emill.workplacetracking.uiViews.LeavingAreaPopUp
 import java.util.concurrent.TimeUnit
 
 class ForegroundService: Service()  {

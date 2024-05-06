@@ -22,16 +22,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.emill.workplacetracking.viewmodels.RequestAccessViewModel
-
+import androidx.compose.runtime.collectAsState
 @Composable
 fun RequestAccessScreen(viewModel: RequestAccessViewModel, navController: NavController) {
-    LaunchedEffect(key1 = true) {
-        viewModel.getPendingWorkAreas()
-    }
-
     val accessCode = remember { mutableStateOf("") }
     // Get the list of pending requests from the ViewModel
-    val pendingRequests = viewModel.pendingRequests.value
+    val pendingRequests = viewModel.pendingRequests.collectAsState()
+
+    LaunchedEffect(key1 = viewModel) {
+        viewModel.getPendingWorkAreas()
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
@@ -56,7 +56,7 @@ fun RequestAccessScreen(viewModel: RequestAccessViewModel, navController: NavCon
             item {
                 Text(text = "Requests", fontSize = 24.sp)
             }
-            items(pendingRequests) { request ->
+            items(pendingRequests.value) { request ->
                 Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(text = "Work Area Name: ${request.workAreaName}", fontSize = 18.sp)

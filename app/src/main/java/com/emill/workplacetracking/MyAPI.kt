@@ -45,6 +45,13 @@ data class WorkAreaRequest(
     @SerializedName("workArea_name") val workAreaName: String
 )
 
+data class WorkAreaDetails(
+    @SerializedName("id") val workAreaId: Int,
+    @SerializedName("latitude") val latitude: Double,
+    @SerializedName("longitude") val longitude: Double,
+    @SerializedName("radius") val radius: Float
+)
+
 
 interface MyAPI {
     //Log
@@ -79,4 +86,20 @@ interface MyAPI {
         @Path("userId") userId: Int,
         @Header("Authorization") token: String
     ): Response<List<WorkAreaRequest>>
+
+    @GET("/workAreas/{workAreaId}")
+    suspend fun getWorkAreaDetails(
+        @Path("workAreaId") workAreaId: Int,
+        @Header("Authorization") token: String
+    ): Response<WorkAreaDetails>
+
+    @FormUrlEncoded
+    @POST("updateUserStatusInArea")
+    suspend fun updateUserStatusInArea(
+        @Field("workerId") workerId: Int,
+        @Field("workAreaId") workAreaId: Int,
+        @Field("isActive") isActive: Boolean
+    ): Response<Void>
+
+
 }
